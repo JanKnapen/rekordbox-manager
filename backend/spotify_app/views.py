@@ -33,17 +33,31 @@ def download_soundcloud_track(url, title, artist, soundcloud_song_id):
         def progress_hook(d):
             if d['status'] == 'downloading':
                 try:
-                    # Calculate percentage
+                    # Calculate percentage (0-90% for download, 90-100% for conversion)
                     downloaded = d.get('downloaded_bytes', 0)
                     total = d.get('total_bytes') or d.get('total_bytes_estimate', 0)
                     
                     if total > 0:
-                        progress = int((downloaded / total) * 100)
+                        # Scale download progress to 0-90%
+                        progress = int((downloaded / total) * 90)
                         # Update database
                         soundcloud_song.download_progress = progress
                         soundcloud_song.save(update_fields=['download_progress'])
                 except Exception as e:
                     print(f"Error updating progress: {e}")
+            elif d['status'] == 'finished':
+                # Download finished, conversion starting (90%)
+                soundcloud_song.download_progress = 90
+                soundcloud_song.save(update_fields=['download_progress'])
+        
+        # Post-processing hook to track conversion
+        def postprocessor_hook(d):
+            if d['status'] == 'started':
+                soundcloud_song.download_progress = 90
+                soundcloud_song.save(update_fields=['download_progress'])
+            elif d['status'] == 'processing':
+                soundcloud_song.download_progress = 95
+                soundcloud_song.save(update_fields=['download_progress'])
             elif d['status'] == 'finished':
                 soundcloud_song.download_progress = 100
                 soundcloud_song.save(update_fields=['download_progress'])
@@ -60,6 +74,7 @@ def download_soundcloud_track(url, title, artist, soundcloud_song_id):
             'quiet': True,
             'no_warnings': True,
             'progress_hooks': [progress_hook],
+            'postprocessor_hooks': [postprocessor_hook],
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -442,6 +457,17 @@ def delete_soundcloud_match(request, spotify_id):
         # Delete the associated SoundCloud song if it exists
         try:
             soundcloud_song = SoundCloudSong.objects.get(spotify_song=spotify_song)
+            
+            # Delete the downloaded file if it exists
+            try:
+                download_path = '/downloads'
+                download_file = os.path.join(download_path, f'{soundcloud_song.artist} - {soundcloud_song.title}.mp3')
+                if os.path.exists(download_file):
+                    os.remove(download_file)
+                    print(f"Deleted file: {download_file}")
+            except Exception as e:
+                print(f"Warning: Could not delete file: {e}")
+            
             soundcloud_song.delete()
         except SoundCloudSong.DoesNotExist:
             pass

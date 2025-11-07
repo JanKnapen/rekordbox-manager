@@ -1,43 +1,304 @@
 import React, { useEffect, useState } from 'react';
-import { fetchSongs } from '../api/api';
+import { useNavigate } from 'react-router-dom';
+import { fetchSongs, fetchNewSpotifySongs, deleteSoundCloudMatch, checkSongInPlaylist } from '../api/api';
+import LoadingSpinner from './LoadingSpinner';
+import { FaTimes, FaSyncAlt, FaExclamationTriangle, FaChevronLeft, FaChevronRight, FaMinus } from 'react-icons/fa';
+import '../styles/Home.css';
 
 const Home = () => {
-  const [songs, setSongs] = useState([]); // ensure array by default
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+    const [savedSongs, setSavedSongs] = useState([]);
+    const [newSongs, setNewSongs] = useState([]);
+    const [savedLoading, setSavedLoading] = useState(true);
+    const [newLoading, setNewLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [refreshing, setRefreshing] = useState(false);
+    const [confirmDelete, setConfirmDelete] = useState(null); // Track which song is awaiting confirmation
+    const [checkingId, setCheckingId] = useState(null); // Track which song is being checked
+    const [savedPage, setSavedPage] = useState(0); // Current page for saved songs
+    const [totalSavedPages, setTotalSavedPages] = useState(0);
+    const [initialLoad, setInitialLoad] = useState(true); // Track if this is the first load
+    const SONGS_PER_PAGE = 15;
+    const navigate = useNavigate();
 
-  useEffect(() => {
-    let mounted = true;
-    setLoading(true);
-    fetchSongs()
-      .then((data) => {
-        if (!mounted) return;
-        setSongs(Array.isArray(data) ? data : []);
-      })
-      .catch((err) => {
-        setError(err?.detail || err?.message || JSON.stringify(err));
-      })
-      .finally(() => mounted && setLoading(false));
-    return () => { mounted = false; };
-  }, []);
+    // Initial load - fetch both saved and new songs
+    useEffect(() => {
+        let mounted = true;
+        setSavedLoading(true);
+        setNewLoading(true);
 
-  if (loading) return <div>Loading…</div>;
-  if (error) return <div className="error">{error}</div>;
+        Promise.all([
+            fetchSongs(savedPage, SONGS_PER_PAGE),
+            fetchNewSpotifySongs()
+        ])
+            .then(([savedData, newOnes]) => {
+                if (!mounted) return;
+                setSavedSongs(savedData.songs || []);
+                setTotalSavedPages(savedData.total_pages || 0);
+                setNewSongs(newOnes);
+                setInitialLoad(false);
+            })
+            .catch((err) => {
+                if (mounted) {
+                    setError(err?.detail || err?.message || JSON.stringify(err));
+                }
+            })
+            .finally(() => {
+                if (mounted) {
+                    setSavedLoading(false);
+                    setNewLoading(false);
+                }
+            });
 
-  return (
-    <div className="home">
-      <h2>Playlist songs</h2>
-      {Array.isArray(songs) && songs.length > 0 ? (
-        <ul>
-          {songs.map((s, i) => (
-            <li key={s.id || i}>{s.title || s.name || JSON.stringify(s)}</li>
-          ))}
-        </ul>
-      ) : (
-        <p>No songs available.</p>
-      )}
-    </div>
-  );
+        return () => { mounted = false; };
+    }, []); // Only run on initial mount
+
+    // Pagination - only fetch saved songs when page changes
+    useEffect(() => {
+        if (initialLoad) return; // Skip on initial load
+        
+        let mounted = true;
+        setSavedLoading(true);
+
+        fetchSongs(savedPage, SONGS_PER_PAGE)
+            .then((savedData) => {
+                if (!mounted) return;
+                setSavedSongs(savedData.songs || []);
+                setTotalSavedPages(savedData.total_pages || 0);
+            })
+            .catch((err) => {
+                if (mounted) {
+                    setError(err?.detail || err?.message || JSON.stringify(err));
+                }
+            })
+            .finally(() => mounted && setSavedLoading(false));
+
+        return () => { mounted = false; };
+    }, [savedPage]);
+
+    const handleLogout = () => {
+        localStorage.removeItem('rbm_authenticated');
+        localStorage.removeItem('rbm_user');
+        navigate('/login');
+    };
+
+    const handleDeleteMatch = async (e, spotifyId) => {
+        e.stopPropagation();
+        
+        // First click: ask for confirmation
+        if (confirmDelete !== spotifyId) {
+            setConfirmDelete(spotifyId);
+            return;
+        }
+        
+        // Second click: actually delete
+        try {
+            await deleteSoundCloudMatch(spotifyId);
+            // Refresh both lists
+            const [savedData, newOnes] = await Promise.all([
+                fetchSongs(savedPage, SONGS_PER_PAGE),
+                fetchNewSpotifySongs()
+            ]);
+            setSavedSongs(savedData.songs || []);
+            setTotalSavedPages(savedData.total_pages || 0);
+            setNewSongs(newOnes);
+            setConfirmDelete(null);
+        } catch (err) {
+            setError(err?.detail || err?.message || 'Failed to delete match');
+            setConfirmDelete(null);
+        }
+    };
+
+    const handleCheckSong = async (e, spotifyId) => {
+        e.stopPropagation();
+        
+        setCheckingId(spotifyId);
+        try {
+            const result = await checkSongInPlaylist(spotifyId);
+            
+            if (result.deleted) {
+                // Song was removed from database, refresh new songs list
+                const newOnes = await fetchNewSpotifySongs();
+                setNewSongs(newOnes);
+            }
+            // If song still exists, no action needed
+        } catch (err) {
+            setError(err?.detail || err?.message || 'Failed to check song');
+        } finally {
+            setCheckingId(null);
+        }
+    };
+
+    const handleRefreshNewSongs = async () => {
+        setRefreshing(true);
+        try {
+            const newOnes = await fetchNewSpotifySongs();
+            setNewSongs(newOnes);
+        } catch (err) {
+            setError(err?.detail || err?.message || 'Failed to refresh new songs');
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
+    const handleBackgroundClick = () => {
+        if (confirmDelete !== null) {
+            setConfirmDelete(null);
+        }
+    };
+
+    const handlePreviousPage = () => {
+        if (savedPage > 0) {
+            setSavedPage(savedPage - 1);
+        }
+    };
+
+    const handleNextPage = () => {
+        if (savedPage < totalSavedPages - 1) {
+            setSavedPage(savedPage + 1);
+        }
+    };
+
+    if (error) return <div className="error">{error}</div>;
+
+    return (
+        <div className="home" onClick={handleBackgroundClick}>
+            <header className="home-header">
+                <h1>RekordBox Manager</h1>
+                <div className="header-right">
+                    <button onClick={handleLogout} className="logout-button">
+                        Logout
+                    </button>
+                </div>
+            </header>
+            <div className="songs-container">
+                <div className="lists-container">
+                    <div className="list-section">
+                        <div className="list-header">
+                            <h2>Saved Songs</h2>
+                            {totalSavedPages > 1 && (
+                                <div className="pagination-buttons">
+                                    <button 
+                                        className="page-button"
+                                        onClick={handlePreviousPage}
+                                        disabled={savedPage === 0}
+                                        title="Previous page"
+                                    >
+                                        <FaChevronLeft />
+                                    </button>
+                                    <span className="page-indicator">{savedPage + 1} / {totalSavedPages}</span>
+                                    <button 
+                                        className="page-button"
+                                        onClick={handleNextPage}
+                                        disabled={savedPage === totalSavedPages - 1}
+                                        title="Next page"
+                                    >
+                                        <FaChevronRight />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        <div className="songs-list">
+                            {savedLoading ? (
+                                <LoadingSpinner />
+                            ) : savedSongs.length > 0 ? (
+                                savedSongs.map((song) => (
+                                    <div 
+                                        key={song.id} 
+                                        className="song-item"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/saved_song/${song.spotify_id}`);
+                                        }}
+                                        style={{ cursor: 'pointer' }}
+                                    >
+                                        <div className="song-icon">
+                                            {song.icon ? (
+                                                <img src={song.icon} alt={song.title} />
+                                            ) : (
+                                                <div className="placeholder-icon">♪</div>
+                                            )}
+                                        </div>
+                                        <div className="song-info">
+                                            <div className="song-title">{song.title}</div>
+                                            <div className="song-artist">{song.artist}</div>
+                                        </div>
+                                        <div className="song-added">
+                                            {song.saved_at ? new Date(song.saved_at).toLocaleDateString() : '-'}
+                                        </div>
+                                        <button 
+                                            className={`delete-match-button ${confirmDelete === song.spotify_id ? 'confirm' : ''}`}
+                                            onClick={(e) => handleDeleteMatch(e, song.spotify_id)}
+                                            title={confirmDelete === song.spotify_id ? "Click again to confirm" : "Remove match"}
+                                        >
+                                            {confirmDelete === song.spotify_id ? <FaExclamationTriangle /> : <FaTimes />}
+                                        </button>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="no-songs">No saved songs</div>
+                            )}
+                        </div>
+                    </div>
+                    
+                    <div className="list-section">
+                        <div className="list-header">
+                            <h2>New Songs</h2>
+                            <button 
+                                className="refresh-button"
+                                onClick={handleRefreshNewSongs}
+                                disabled={refreshing}
+                                title="Refresh new songs"
+                            >
+                                <FaSyncAlt className={refreshing ? 'spinning' : ''} />
+                            </button>
+                        </div>
+                        <div className="songs-list">
+                            {newLoading ? (
+                                <LoadingSpinner />
+                            ) : newSongs.length > 0 ? (
+                                newSongs.map((song) => (
+                                    <div
+                                        key={song.spotify_id}
+                                        className="song-item"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/new_song/${song.spotify_id}`);
+                                        }}
+                                        style={{ cursor: 'pointer' }}
+                                    >
+                                        <div className="song-icon">
+                                            {song.icon ? (
+                                                <img src={song.icon} alt={song.title} />
+                                            ) : (
+                                                <div className="placeholder-icon">♪</div>
+                                            )}
+                                        </div>
+                                        <div className="song-info">
+                                            <div className="song-title">{song.title}</div>
+                                            <div className="song-artist">{song.artist}</div>
+                                        </div>
+                                        <div className="song-added">
+                                            {song.added_at ? new Date(song.added_at).toLocaleDateString() : '-'}
+                                        </div>
+                                        <button 
+                                            className="check-song-button"
+                                            onClick={(e) => handleCheckSong(e, song.spotify_id)}
+                                            disabled={checkingId === song.spotify_id}
+                                            title="Check if song still in playlist"
+                                        >
+                                            <FaMinus />
+                                        </button>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="no-songs">No new songs</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 };
 
 export default Home;

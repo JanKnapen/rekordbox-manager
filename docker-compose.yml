@@ -9,6 +9,7 @@ services:
       - .env
     volumes:
       - ./backend:/app
+      - ${DOWNLOAD_PATH}:/downloads
     ports:
       - "8000:8000"
     command: bash -lc "python manage.py migrate --noinput || true && python manage.py runserver 0.0.0.0:8000"

@@ -27,37 +27,111 @@ api.interceptors.request.use((config) => {
   return config;
 }, (err) => Promise.reject(err));
 
-// call this once (GET) before making POST/PUT/DELETE requests to ensure the csrftoken cookie is set
+// handle 401/403 responses globally
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      // Clear auth state
+      localStorage.removeItem('rbm_authenticated');
+      localStorage.removeItem('rbm_user');
+      // Redirect to login page
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// call this once before making POST/PUT/DELETE requests to ensure the csrftoken cookie is set
 export const initCsrf = async () => {
-  // backend should expose /api/csrf/ which sets the csrftoken cookie (see backend change below)
   await api.get('/api/accounts/csrf/');
 };
 
 export const loginUser = async (credentials) => {
   try {
-    const response = await api.post(`/api/accounts/login/`, credentials);
+    const response = await api.post('/api/accounts/login/', credentials);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
   }
 };
 
-export const fetchSongs = async () => {
+export const fetchSongs = async (page = 0, pageSize = 15) => {
   try {
-    const response = await api.get(`/api/spotify/songs/`);
-    const data = response.data;
-
-    // If backend returns { songs: [...] } or [...] handle both.
-    if (Array.isArray(data)) return data;
-    if (data && Array.isArray(data.songs)) return data.songs;
-
-    // Fallback: if the API returns an object map, try to extract values as array
-    if (data && typeof data === 'object') return Object.values(data);
-
-    return []; // default empty array
+    const response = await api.get(`/api/spotify/songs/?page=${page}&page_size=${pageSize}`);
+    return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
   }
+};
+
+export const fetchNewSpotifySongs = async () => {
+    try {
+        const response = await api.get('/api/spotify/new-songs/');
+        return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const fetchSpotifySong = async (spotifyId) => {
+    try {
+        const response = await api.get(`/api/spotify/song/${spotifyId}/`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const saveSoundCloudMatch = async (spotifyId, spotifyData, soundcloudMatch) => {
+    try {
+        const response = await api.post('/api/spotify/save-match/', {
+            spotify_id: spotifyId,
+            spotify_title: spotifyData.title,
+            spotify_artist: spotifyData.artist,
+            spotify_icon: spotifyData.icon,
+            soundcloud_match: soundcloudMatch
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const deleteSoundCloudMatch = async (spotifyId) => {
+    try {
+        const response = await api.delete(`/api/spotify/delete-match/${spotifyId}/`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const checkSongInPlaylist = async (spotifyId) => {
+    try {
+        const response = await api.post(`/api/spotify/check-song/${spotifyId}/`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const getDownloadStatus = async (spotifyId) => {
+    try {
+        const response = await api.get(`/api/spotify/download-status/${spotifyId}/`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const retryDownload = async (spotifyId) => {
+    try {
+        const response = await api.post(`/api/spotify/retry-download/${spotifyId}/`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
 };
 
 export default api;

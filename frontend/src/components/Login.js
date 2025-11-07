@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { initCsrf, loginUser } from '../api/api';
+import '../styles/Login.css';
 
 const Login = () => {
     const [username, setUsername] = useState('');
@@ -14,12 +15,11 @@ const Login = () => {
         setError('');
         setLoading(true);
         try {
-            await initCsrf(); // ensure csrftoken cookie is set
+            await initCsrf();
             const response = await loginUser({ username, password });
-            // Persist minimal auth state and redirect to home
             localStorage.setItem('rbm_authenticated', '1');
             localStorage.setItem('rbm_user', JSON.stringify(response || { username }));
-            navigate('/home'); // redirect to home page
+            navigate('/home');
         } catch (err) {
             const msg = err?.detail || err?.message || (typeof err === 'string' ? err : 'Login failed');
             setError(typeof msg === 'string' ? msg : JSON.stringify(msg));
@@ -29,32 +29,42 @@ const Login = () => {
     }
 
     return (
-        <div className="login-container">
-            <h2>Login</h2>
-            <form onSubmit={handleSubmit}>
-                <div>
-                    <label>Username:</label>
-                    <input
-                        type="text"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        required
-                    />
+        <div className="login-page">
+            <div className="login-container">
+                <h1 className="app-title">RekordBox Manager</h1>
+                <div className="login-box">
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <input
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                placeholder="Username"
+                                required
+                                className="login-input"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="Password"
+                                required
+                                className="login-input"
+                            />
+                        </div>
+                        {error && <div className="error-message">{error}</div>}
+                        <button
+                            type="submit"
+                            className="login-button"
+                            disabled={loading}
+                        >
+                            {loading ? 'Signing in...' : 'Sign In'}
+                        </button>
+                    </form>
                 </div>
-                <div>
-                    <label>Password:</label>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-                </div>
-                {error && <p className="error">{error}</p>}
-                <button type="submit" disabled={loading}>
-                    {loading ? 'Logging in…' : 'Login'}
-                </button>
-            </form>
+            </div>
         </div>
     );
 };

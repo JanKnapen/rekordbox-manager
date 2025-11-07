@@ -36,6 +36,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # Add this near the top
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -43,7 +44,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'spotify_project.urls'
@@ -106,3 +106,15 @@ SPOTIFY_CLIENT_ID = env('SPOTIFY_CLIENT_ID')
 SPOTIFY_CLIENT_SECRET = env('SPOTIFY_CLIENT_SECRET')
 SPOTIFY_USERNAME = env('SPOTIFY_USERNAME')
 SPOTIFY_PLAYLIST_ID = env('SPOTIFY_PLAYLIST_ID')
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

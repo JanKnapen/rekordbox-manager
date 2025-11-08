@@ -1,0 +1,238 @@
+.playlist-manager {
+  min-height: 100vh;
+  background-color: #ffffff;
+}
+
+.playlist-manager .content {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.playlist-manager h1 {
+  color: #1f2937;
+  margin-bottom: 2rem;
+}
+
+.playlist-manager .error-message {
+  background-color: #dc2626;
+  color: white;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.playlist-manager .manager-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+/* Saved Songs Section */
+.playlist-manager .songs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  min-height: 52px;
+}
+
+.playlist-manager .songs-section h2 {
+  color: #1f2937;
+  margin: 0;
+}
+
+.playlist-manager .songs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 70vh;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.playlist-manager .song-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  cursor: grab;
+  transition: all 0.2s;
+}
+
+.playlist-manager .song-item:hover {
+  background-color: #f3f4f6;
+  transform: translateX(5px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.playlist-manager .song-item:active {
+  cursor: grabbing;
+  opacity: 0.7;
+}
+
+.playlist-manager .song-item img {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.playlist-manager .song-info {
+  flex: 1;
+}
+
+.playlist-manager .song-title {
+  color: #1f2937;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.playlist-manager .song-artist {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* Playlists Section */
+.playlist-manager .playlists-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  min-height: 52px;
+}
+
+.playlist-manager .playlists-section h2 {
+  color: #1f2937;
+  margin: 0;
+}
+
+.playlist-manager .create-btn {
+  background-color: #10b981;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.playlist-manager .create-btn:hover {
+  background-color: #059669;
+}
+
+.playlist-manager .create-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.playlist-manager .create-form input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #d1d5db;
+  background-color: #ffffff;
+  color: #1f2937;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.playlist-manager .create-form input:focus {
+  outline: none;
+  border-color: #10b981;
+}
+
+.playlist-manager .create-form button {
+  background-color: #10b981;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.playlist-manager .create-form button:hover {
+  background-color: #059669;
+}
+
+.playlist-manager .playlists-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 70vh;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.playlist-manager .playlist-item {
+  padding: 1.5rem;
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 2px dashed #d1d5db;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.playlist-manager .playlist-item:hover {
+  background-color: #f3f4f6;
+  border-color: #10b981;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.playlist-manager .playlist-name {
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 1.125rem;
+  margin-bottom: 0.5rem;
+}
+
+.playlist-manager .playlist-count {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* Scrollbar styling */
+.playlist-manager .songs-list::-webkit-scrollbar,
+.playlist-manager .playlists-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.playlist-manager .songs-list::-webkit-scrollbar-track,
+.playlist-manager .playlists-list::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+.playlist-manager .songs-list::-webkit-scrollbar-thumb,
+.playlist-manager .playlists-list::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+.playlist-manager .songs-list::-webkit-scrollbar-thumb:hover,
+.playlist-manager .playlists-list::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+@media (max-width: 768px) {
+  .playlist-manager .manager-layout {
+    grid-template-columns: 1fr;
+  }
+}

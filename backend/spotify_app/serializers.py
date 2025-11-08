@@ -4,7 +4,7 @@ from .models import SpotifySong, SoundCloudSong
 class SpotifySongSerializer(serializers.ModelSerializer):
     class Meta:
         model = SpotifySong
-        fields = ['id', 'icon', 'title', 'artist', 'added_at', 'saved_at', 'spotify_id', 'is_saved']
+        fields = ['id', 'icon', 'title', 'artist', 'added_at', 'saved_at', 'spotify_id', 'is_saved', 'in_playlist']
 
 class SoundCloudSongSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,11 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './components/Login';
-import Home from './components/Home';
-import NewSong from './components/NewSong';
-import SavedSong from './components/SavedSong';
-import { PrivateRoute, PublicRoute } from './components/ProtectedRoute';
-import './styles/app.css';
+import Login from './components/auth/Login';
+import Home from './components/pages/Home';
+import NewSong from './components/pages/NewSong';
+import SavedSong from './components/pages/SavedSong';
+import PlaylistManager from './components/pages/PlaylistManager';
+import { PrivateRoute, PublicRoute } from './components/auth/ProtectedRoute';
+import './app.css';
 
 function App() {
     return (
@@ -24,6 +25,14 @@ function App() {
                     element={
                         <PrivateRoute>
                             <Home />
+                        </PrivateRoute>
+                    }
+                />
+                <Route
+                    path="/playlist-manager"
+                    element={
+                        <PrivateRoute>
+                            <PlaylistManager />
                         </PrivateRoute>
                     }
                 />

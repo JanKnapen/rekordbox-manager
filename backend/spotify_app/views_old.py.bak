@@ -188,15 +188,22 @@ def get_spotify_songs(request):
     # Get pagination parameters from query string
     page = int(request.GET.get('page', 0))
     page_size = int(request.GET.get('page_size', 15))
+    exclude_in_playlist = request.GET.get('exclude_in_playlist', 'false').lower() == 'true'
+    
+    # Build query - optionally exclude songs already in playlists
+    if exclude_in_playlist:
+        query = SpotifySong.objects.filter(is_saved=True, in_playlist=False)
+    else:
+        query = SpotifySong.objects.filter(is_saved=True)
     
     # Get total count
-    total_count = SpotifySong.objects.filter(is_saved=True).count()
+    total_count = query.count()
     
     # Calculate offset
     offset = page * page_size
     
     # Get paginated songs, ordered by most recent first
-    songs = SpotifySong.objects.filter(is_saved=True).order_by('-saved_at')[offset:offset + page_size]
+    songs = query.order_by('-saved_at')[offset:offset + page_size]
     serializer = SpotifySongSerializer(songs, many=True)
     
     return Response({
@@ -314,6 +321,43 @@ def get_spotify_song(request, spotify_id):
         title = track.get('name', '')
         artist = ', '.join(artist['name'] for artist in track.get('artists', []))
         
+        song_data = {
+            'spotify_id': track.get('id'),
+            'title': title,
+            'artist': artist,
+            'icon': track.get('album', {}).get('images', [{}])[0].get('url'),
+            'preview_url': track.get('preview_url'),
+            'duration_ms': track.get('duration_ms'),
+            'album_name': track.get('album', {}).get('name'),
+            'release_date': track.get('album', {}).get('release_date'),
+        }
+            
+        return Response(song_data)
+        
+    except requests.RequestException as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_soundcloud_matches(request, spotify_id):
+    """Get SoundCloud matches for a Spotify song"""
+    access_token = get_spotify_access_token()
+    
+    if not access_token:
+        return Response({'error': 'Unable to retrieve Spotify access token'}, status=400)
+
+    url = f'https://api.spotify.com/v1/tracks/{spotify_id}'
+    headers = {'Authorization': f'Bearer {access_token}'}
+    
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        track = response.json()
+        
+        # Get basic song info
+        title = track.get('name', '')
+        artist = ', '.join(artist['name'] for artist in track.get('artists', []))
+        
         # Check if this song has a saved SoundCloud match
         try:
             spotify_song = SpotifySong.objects.get(spotify_id=spotify_id)
@@ -340,20 +384,10 @@ def get_spotify_song(request, spotify_id):
             # Song doesn't exist in DB, search for matches
             soundcloud_matches = search_soundcloud(title, artist)
         
-        song_data = {
-            'spotify_id': track.get('id'),
-            'title': title,
-            'artist': artist,
-            'icon': track.get('album', {}).get('images', [{}])[0].get('url'),
-            'preview_url': track.get('preview_url'),
-            'duration_ms': track.get('duration_ms'),
-            'album_name': track.get('album', {}).get('name'),
-            'release_date': track.get('album', {}).get('release_date'),
+        return Response({
             'soundcloud_matches': soundcloud_matches,
             'soundcloud_error': soundcloud_matches is None  # Indicate if all retries failed
-        }
-            
-        return Response(song_data)
+        })
         
     except requests.RequestException as e:
         return Response({'error': str(e)}, status=500)
@@ -451,6 +485,7 @@ def save_soundcloud_match(request):
 @permission_classes([IsAuthenticated])
 def delete_soundcloud_match(request, spotify_id):
     """Delete the SoundCloud match for a Spotify song and mark it as not saved"""
+    from .models import PlaylistSong, Playlist
     try:
         spotify_song = SpotifySong.objects.get(spotify_id=spotify_id)
         
@@ -458,7 +493,7 @@ def delete_soundcloud_match(request, spotify_id):
         try:
             soundcloud_song = SoundCloudSong.objects.get(spotify_song=spotify_song)
             
-            # Delete the downloaded file if it exists
+            # Delete the downloaded file from main downloads folder
             try:
                 download_path = '/downloads'
                 download_file = os.path.join(download_path, f'{soundcloud_song.artist} - {soundcloud_song.title}.mp3')
@@ -468,13 +503,30 @@ def delete_soundcloud_match(request, spotify_id):
             except Exception as e:
                 print(f"Warning: Could not delete file: {e}")
             
+            # Delete files from playlist directories if song is in playlists
+            if spotify_song.in_playlist:
+                playlist_songs = PlaylistSong.objects.filter(spotify_song=spotify_song).select_related('playlist')
+                for ps in playlist_songs:
+                    try:
+                        playlist_dir = os.path.join(download_path, ps.playlist.name)
+                        playlist_file = os.path.join(playlist_dir, f'{soundcloud_song.artist} - {soundcloud_song.title}.mp3')
+                        if os.path.exists(playlist_file):
+                            os.remove(playlist_file)
+                            print(f"Deleted file from playlist: {playlist_file}")
+                    except Exception as e:
+                        print(f"Warning: Could not delete file from playlist: {e}")
+            
             soundcloud_song.delete()
         except SoundCloudSong.DoesNotExist:
             pass
         
-        # Mark Spotify song as not saved and clear saved_at
+        # Remove song from all playlists
+        PlaylistSong.objects.filter(spotify_song=spotify_song).delete()
+        
+        # Mark Spotify song as not saved, not in playlist, and clear saved_at
         spotify_song.is_saved = False
         spotify_song.saved_at = None
+        spotify_song.in_playlist = False
         spotify_song.save()
         
         return Response({
@@ -619,5 +671,138 @@ def retry_download(request, spotify_id):
         return Response({'error': 'Spotify song not found in database'}, status=404)
     except SoundCloudSong.DoesNotExist:
         return Response({'error': 'No SoundCloud match found'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_playlists(request):
+    """Get all playlists"""
+    from .models import Playlist
+    playlists = Playlist.objects.all()
+    return Response([{
+        'id': p.id,
+        'name': p.name,
+        'song_count': p.songs.count(),
+        'created_at': p.created_at
+    } for p in playlists])
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_playlist(request):
+    """Create a new playlist and directory"""
+    from .models import Playlist
+    import os
+    
+    name = request.data.get('name')
+    if not name:
+        return Response({'error': 'Playlist name is required'}, status=400)
+    
+    try:
+        # Create playlist in database
+        playlist = Playlist.objects.create(name=name)
+        
+        # Create directory in downloads folder
+        download_path = os.getenv('DOWNLOAD_PATH', '/downloads')
+        playlist_dir = os.path.join(download_path, name)
+        os.makedirs(playlist_dir, exist_ok=True)
+        os.chmod(playlist_dir, 0o777)  # Make it accessible
+        
+        return Response({
+            'id': playlist.id,
+            'name': playlist.name,
+            'song_count': 0,
+            'created_at': playlist.created_at
+        }, status=201)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_song_to_playlist(request, playlist_id):
+    """Add a song to a playlist"""
+    from .models import Playlist, PlaylistSong
+    import shutil
+    
+    spotify_id = request.data.get('spotify_id')
+    if not spotify_id:
+        return Response({'error': 'Spotify ID is required'}, status=400)
+    
+    try:
+        playlist = Playlist.objects.get(id=playlist_id)
+        spotify_song = SpotifySong.objects.get(spotify_id=spotify_id)
+        
+        # Check if song is already in any playlist
+        if spotify_song.in_playlist:
+            return Response({'error': 'Song is already in another playlist'}, status=400)
+        
+        # Get the highest position in the playlist
+        max_position = PlaylistSong.objects.filter(playlist=playlist).count()
+        
+        # Add song to playlist
+        playlist_song, created = PlaylistSong.objects.get_or_create(
+            playlist=playlist,
+            spotify_song=spotify_song,
+            defaults={'position': max_position}
+        )
+        
+        if not created:
+            return Response({'error': 'Song already in playlist'}, status=400)
+        
+        # Mark song as in_playlist
+        spotify_song.in_playlist = True
+        spotify_song.save()
+        
+        # Copy mp3 file to playlist directory if it exists
+        try:
+            soundcloud_song = SoundCloudSong.objects.get(spotify_song=spotify_song)
+            if soundcloud_song.download_status == 'completed':
+                download_path = os.getenv('DOWNLOAD_PATH', '/downloads')
+                source_file = os.path.join(download_path, f'{soundcloud_song.artist} - {soundcloud_song.title}.mp3')
+                playlist_dir = os.path.join(download_path, playlist.name)
+                dest_file = os.path.join(playlist_dir, f'{soundcloud_song.artist} - {soundcloud_song.title}.mp3')
+                
+                if os.path.exists(source_file):
+                    os.makedirs(playlist_dir, exist_ok=True)
+                    shutil.copy2(source_file, dest_file)
+                    os.chmod(dest_file, 0o666)
+                    print(f"Copied file to playlist: {dest_file}")
+        except SoundCloudSong.DoesNotExist:
+            pass  # Song doesn't have a SoundCloud match yet
+        except Exception as e:
+            print(f"Warning: Could not copy file to playlist: {e}")
+        
+        return Response({'success': True}, status=201)
+    except Playlist.DoesNotExist:
+        return Response({'error': 'Playlist not found'}, status=404)
+    except SpotifySong.DoesNotExist:
+        return Response({'error': 'Song not found'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_playlist_songs(request, playlist_id):
+    """Get all songs in a playlist"""
+    from .models import Playlist, PlaylistSong
+    
+    try:
+        playlist = Playlist.objects.get(id=playlist_id)
+        playlist_songs = PlaylistSong.objects.filter(playlist=playlist).select_related('spotify_song')
+        
+        songs = []
+        for ps in playlist_songs:
+            song = ps.spotify_song
+            songs.append({
+                'id': song.id,
+                'spotify_id': song.spotify_id,
+                'title': song.title,
+                'artist': song.artist,
+                'icon': song.icon,
+                'position': ps.position
+            })
+        
+        return Response(songs)
+    except Playlist.DoesNotExist:
+        return Response({'error': 'Playlist not found'}, status=404)
     except Exception as e:
         return Response({'error': str(e)}, status=500)

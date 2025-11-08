@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchSongs, fetchNewSpotifySongs, deleteSoundCloudMatch, checkSongInPlaylist } from '../api/api';
-import LoadingSpinner from './LoadingSpinner';
-import { FaTimes, FaSyncAlt, FaExclamationTriangle, FaChevronLeft, FaChevronRight, FaMinus } from 'react-icons/fa';
-import '../styles/Home.css';
+import { fetchSongs, fetchNewSpotifySongs, deleteSoundCloudMatch, checkSongInPlaylist } from '../../../api/api';
+import LoadingSpinner from '../../common/LoadingSpinner';
+import Header from '../../layout/Header';
+import Pagination from '../../common/Pagination';
+import SongItem from '../../shared/SongItem';
+import { FaTimes, FaSyncAlt, FaExclamationTriangle, FaMinus } from 'react-icons/fa';
+import './Home.css';
 
 const Home = () => {
     const [savedSongs, setSavedSongs] = useState([]);
@@ -50,6 +53,7 @@ const Home = () => {
             });
 
         return () => { mounted = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // Only run on initial mount
 
     // Pagination - only fetch saved songs when page changes
@@ -73,13 +77,8 @@ const Home = () => {
             .finally(() => mounted && setSavedLoading(false));
 
         return () => { mounted = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [savedPage]);
-
-    const handleLogout = () => {
-        localStorage.removeItem('rbm_authenticated');
-        localStorage.removeItem('rbm_user');
-        navigate('/login');
-    };
 
     const handleDeleteMatch = async (e, spotifyId) => {
         e.stopPropagation();
@@ -162,77 +161,45 @@ const Home = () => {
 
     return (
         <div className="home" onClick={handleBackgroundClick}>
-            <header className="home-header">
-                <h1>RekordBox Manager</h1>
-                <div className="header-right">
-                    <button onClick={handleLogout} className="logout-button">
-                        Logout
-                    </button>
-                </div>
-            </header>
+            <Header showHome={false} showPlaylistManager={true} />
             <div className="songs-container">
                 <div className="lists-container">
                     <div className="list-section">
                         <div className="list-header">
                             <h2>Saved Songs</h2>
-                            {totalSavedPages > 1 && (
-                                <div className="pagination-buttons">
-                                    <button 
-                                        className="page-button"
-                                        onClick={handlePreviousPage}
-                                        disabled={savedPage === 0}
-                                        title="Previous page"
-                                    >
-                                        <FaChevronLeft />
-                                    </button>
-                                    <span className="page-indicator">{savedPage + 1} / {totalSavedPages}</span>
-                                    <button 
-                                        className="page-button"
-                                        onClick={handleNextPage}
-                                        disabled={savedPage === totalSavedPages - 1}
-                                        title="Next page"
-                                    >
-                                        <FaChevronRight />
-                                    </button>
-                                </div>
-                            )}
+                            <Pagination
+                                currentPage={savedPage}
+                                totalPages={totalSavedPages}
+                                onPrevious={handlePreviousPage}
+                                onNext={handleNextPage}
+                            />
                         </div>
                         <div className="songs-list">
                             {savedLoading ? (
                                 <LoadingSpinner />
                             ) : savedSongs.length > 0 ? (
                                 savedSongs.map((song) => (
-                                    <div 
-                                        key={song.id} 
-                                        className="song-item"
+                                    <SongItem
+                                        key={song.id}
+                                        song={song}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             navigate(`/saved_song/${song.spotify_id}`);
                                         }}
-                                        style={{ cursor: 'pointer' }}
+                                        actionButton={
+                                            <button 
+                                                className={`delete-match-button ${confirmDelete === song.spotify_id ? 'confirm' : ''}`}
+                                                onClick={(e) => handleDeleteMatch(e, song.spotify_id)}
+                                                title={confirmDelete === song.spotify_id ? "Click again to confirm" : "Remove match"}
+                                            >
+                                                {confirmDelete === song.spotify_id ? <FaExclamationTriangle /> : <FaTimes />}
+                                            </button>
+                                        }
                                     >
-                                        <div className="song-icon">
-                                            {song.icon ? (
-                                                <img src={song.icon} alt={song.title} />
-                                            ) : (
-                                                <div className="placeholder-icon">♪</div>
-                                            )}
-                                        </div>
-                                        <div className="song-info">
-                                            <div className="song-title">{song.title}</div>
-                                            <div className="song-artist">{song.artist}</div>
-                                        </div>
                                         <div className="song-added">
                                             {song.saved_at ? new Date(song.saved_at).toLocaleDateString() : '-'}
                                         </div>
-                                        <button 
-                                            className={`delete-match-button ${confirmDelete === song.spotify_id ? 'confirm' : ''}`}
-                                            onClick={(e) => handleDeleteMatch(e, song.spotify_id)}
-                                            title={confirmDelete === song.spotify_id ? "Click again to confirm" : "Remove match"}
-                                        >
-                                            {confirmDelete === song.spotify_id ? <FaExclamationTriangle /> : <FaTimes />}
-                                        </button>
-                                    </div>
+                                    </SongItem>
                                 ))
                             ) : (
                                 <div className="no-songs">No saved songs</div>
@@ -257,38 +224,28 @@ const Home = () => {
                                 <LoadingSpinner />
                             ) : newSongs.length > 0 ? (
                                 newSongs.map((song) => (
-                                    <div
+                                    <SongItem
                                         key={song.spotify_id}
-                                        className="song-item"
+                                        song={song}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             navigate(`/new_song/${song.spotify_id}`);
                                         }}
-                                        style={{ cursor: 'pointer' }}
+                                        actionButton={
+                                            <button 
+                                                className="check-song-button"
+                                                onClick={(e) => handleCheckSong(e, song.spotify_id)}
+                                                disabled={checkingId === song.spotify_id}
+                                                title="Check if song still in playlist"
+                                            >
+                                                <FaMinus />
+                                            </button>
+                                        }
                                     >
-                                        <div className="song-icon">
-                                            {song.icon ? (
-                                                <img src={song.icon} alt={song.title} />
-                                            ) : (
-                                                <div className="placeholder-icon">♪</div>
-                                            )}
-                                        </div>
-                                        <div className="song-info">
-                                            <div className="song-title">{song.title}</div>
-                                            <div className="song-artist">{song.artist}</div>
-                                        </div>
                                         <div className="song-added">
                                             {song.added_at ? new Date(song.added_at).toLocaleDateString() : '-'}
                                         </div>
-                                        <button 
-                                            className="check-song-button"
-                                            onClick={(e) => handleCheckSong(e, song.spotify_id)}
-                                            disabled={checkingId === song.spotify_id}
-                                            title="Check if song still in playlist"
-                                        >
-                                            <FaMinus />
-                                        </button>
-                                    </div>
+                                    </SongItem>
                                 ))
                             ) : (
                                 <div className="no-songs">No new songs</div>

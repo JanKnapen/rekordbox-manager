@@ -56,9 +56,16 @@ export const loginUser = async (credentials) => {
   }
 };
 
-export const fetchSongs = async (page = 0, pageSize = 15) => {
+export const fetchSongs = async (page = 0, pageSize = 15, excludeInPlaylist = false) => {
   try {
-    const response = await api.get(`/api/spotify/songs/?page=${page}&page_size=${pageSize}`);
+    const params = new URLSearchParams({
+      page: page.toString(),
+      page_size: pageSize.toString(),
+    });
+    if (excludeInPlaylist) {
+      params.append('exclude_in_playlist', 'true');
+    }
+    const response = await api.get(`/api/spotify/songs/?${params.toString()}`);
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -77,6 +84,15 @@ export const fetchNewSpotifySongs = async () => {
 export const fetchSpotifySong = async (spotifyId) => {
     try {
         const response = await api.get(`/api/spotify/song/${spotifyId}/`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const fetchSoundCloudMatches = async (spotifyId) => {
+    try {
+        const response = await api.get(`/api/spotify/soundcloud-matches/${spotifyId}/`);
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message;
@@ -128,6 +144,42 @@ export const getDownloadStatus = async (spotifyId) => {
 export const retryDownload = async (spotifyId) => {
     try {
         const response = await api.post(`/api/spotify/retry-download/${spotifyId}/`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const getPlaylists = async () => {
+    try {
+        const response = await api.get('/api/spotify/playlists/');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const createPlaylist = async (name) => {
+    try {
+        const response = await api.post('/api/spotify/playlists/create/', { name });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const getPlaylistSongs = async (playlistId) => {
+    try {
+        const response = await api.get(`/api/spotify/playlists/${playlistId}/songs/`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const addSongToPlaylist = async (playlistId, spotifyId) => {
+    try {
+        const response = await api.post(`/api/spotify/playlists/${playlistId}/add-song/`, { spotify_id: spotifyId });
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message;

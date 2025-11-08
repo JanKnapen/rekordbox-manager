@@ -8,6 +8,8 @@
     position: sticky;
     top: 0;
     z-index: 10;
+    min-height: 72px;
+    max-height: 72px;
 }
 
 .page-header h1 {

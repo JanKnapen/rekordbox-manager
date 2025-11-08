@@ -115,7 +115,7 @@ const SavedSong = () => {
     if (loading) {
         return (
             <div className="page">
-                <Header showHome={true} />
+                <Header showHome={true} showPlaylistManager={true} />
                 <div className="page-loading">
                     <LoadingSpinner />
                 </div>
@@ -126,7 +126,7 @@ const SavedSong = () => {
     if (error) {
         return (
             <div className="page">
-                <Header showHome={true} />
+                <Header showHome={true} showPlaylistManager={true} />
                 <div className="error-container">
                     <div className="error">{error}</div>
                 </div>
@@ -136,7 +136,7 @@ const SavedSong = () => {
 
     return (
         <div className="page" onClick={handleBackgroundClick}>
-            <Header showHome={true} />
+            <Header showHome={true} showPlaylistManager={true} />
 
             <div className="content">
                 {song && (

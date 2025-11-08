@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '../../layout';
 import { LoadingSpinner, Snackbar } from '../../common';
 import { fetchSongs, getPlaylists, createPlaylist, addSongToPlaylist } from '../../../api/api';
 import './PlaylistManager.css';
 
 function PlaylistManager() {
+  const navigate = useNavigate();
   const [songs, setSongs] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -111,6 +113,8 @@ function PlaylistManager() {
                   draggable
                   onDragStart={(e) => handleDragStart(e, song)}
                   onDragEnd={handleDragEnd}
+                  onClick={() => navigate(`/saved_song/${song.spotify_id}`)}
+                  style={{ cursor: 'pointer' }}
                 >
                   {song.icon && <img src={song.icon} alt={song.title} />}
                   <div className="song-info">

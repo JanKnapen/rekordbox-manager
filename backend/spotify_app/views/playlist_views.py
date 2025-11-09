@@ -122,14 +122,25 @@ def get_playlist_songs(request, playlist_id):
         songs = []
         for ps in playlist_songs:
             song = ps.spotify_song
-            songs.append({
+            song_data = {
                 'id': song.id,
                 'spotify_id': song.spotify_id,
                 'title': song.title,
                 'artist': song.artist,
                 'icon': song.icon,
                 'position': ps.position
-            })
+            }
+            
+            # Try to get BPM and key from related SoundCloudSong
+            try:
+                soundcloud_song = song.soundcloud_match
+                song_data['bpm'] = soundcloud_song.bpm
+                song_data['key'] = soundcloud_song.key
+            except:
+                song_data['bpm'] = None
+                song_data['key'] = None
+            
+            songs.append(song_data)
         
         return Response(songs)
     except Playlist.DoesNotExist:

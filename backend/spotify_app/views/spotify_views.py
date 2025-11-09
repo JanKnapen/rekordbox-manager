@@ -34,10 +34,23 @@ def get_spotify_songs(request):
     
     # Get paginated songs, ordered by most recent first
     songs = query.order_by('-saved_at')[offset:offset + page_size]
-    serializer = SpotifySongSerializer(songs, many=True)
+    
+    # Serialize with additional BPM and key data from SoundCloudSong
+    songs_data = []
+    for song in songs:
+        song_dict = SpotifySongSerializer(song).data
+        # Try to get BPM and key from related SoundCloudSong
+        try:
+            soundcloud_song = song.soundcloud_match
+            song_dict['bpm'] = soundcloud_song.bpm
+            song_dict['key'] = soundcloud_song.key
+        except:
+            song_dict['bpm'] = None
+            song_dict['key'] = None
+        songs_data.append(song_dict)
     
     return Response({
-        'songs': serializer.data,
+        'songs': songs_data,
         'total': total_count,
         'page': page,
         'page_size': page_size,

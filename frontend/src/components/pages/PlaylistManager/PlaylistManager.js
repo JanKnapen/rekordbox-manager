@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../../layout';
 import { LoadingSpinner, Snackbar } from '../../common';
+import { SongMetadata } from '../../shared';
 import { fetchSongs, getPlaylists, createPlaylist, addSongToPlaylist } from '../../../api/api';
 import './PlaylistManager.css';
 
@@ -120,6 +121,7 @@ function PlaylistManager() {
                   <div className="song-info">
                     <div className="song-title">{song.title}</div>
                     <div className="song-artist">{song.artist}</div>
+                    <SongMetadata bpm={song.bpm} musicKey={song.key} />
                   </div>
                 </div>
               ))}

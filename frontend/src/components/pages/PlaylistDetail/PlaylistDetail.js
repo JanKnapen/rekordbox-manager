@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../../layout';
 import { LoadingSpinner, Snackbar, ConfirmDeleteButton } from '../../common';
+import { SongMetadata } from '../../shared';
 import { getPlaylistSongs, getPlaylists, removeSongFromPlaylist } from '../../../api/api';
 import './PlaylistDetail.css';
 
@@ -98,6 +99,7 @@ function PlaylistDetail() {
                   <div className="song-info">
                     <div className="song-title">{song.title}</div>
                     <div className="song-artist">{song.artist}</div>
+                    <SongMetadata bpm={song.bpm} musicKey={song.key} />
                   </div>
                 </div>
                 <ConfirmDeleteButton

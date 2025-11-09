@@ -1,0 +1,16 @@
+.song-metadata {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.song-metadata .bpm {
+  color: #059669;
+  font-weight: 600;
+}
+
+.song-metadata .key {
+  color: #7c3aed;
+  font-weight: 600;
+}

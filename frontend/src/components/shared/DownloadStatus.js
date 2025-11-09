@@ -4,6 +4,17 @@ import { FaCheck, FaExclamationTriangle, FaRedo } from 'react-icons/fa';
 const DownloadStatus = ({ status, progress, onRetry }) => {
     if (!status) return null;
 
+    const getStatusMessage = () => {
+        if (status === 'downloading' && progress < 80) {
+            return `Downloading: ${progress}%`;
+        } else if (status === 'downloading' && progress >= 80) {
+            return `Converting: ${progress}%`;
+        } else if (status === 'analyzing') {
+            return `Analyzing: ${progress}%`;
+        }
+        return '';
+    };
+
     return (
         <div className="download-status-container">
             {status === 'pending' && (
@@ -11,9 +22,9 @@ const DownloadStatus = ({ status, progress, onRetry }) => {
                     <span>Download pending...</span>
                 </div>
             )}
-            {status === 'downloading' && (
+            {(status === 'downloading' || status === 'analyzing') && (
                 <div className="download-status downloading">
-                    <span>Downloading: {progress}%</span>
+                    <span>{getStatusMessage()}</span>
                     <div className="progress-bar">
                         <div 
                             className="progress-bar-fill" 
@@ -25,7 +36,7 @@ const DownloadStatus = ({ status, progress, onRetry }) => {
             {status === 'completed' && (
                 <div className="download-status success">
                     <FaCheck style={{ marginRight: '0.5rem' }} />
-                    <span>Download completed</span>
+                    <span>Download and analysis completed</span>
                 </div>
             )}
             {status === 'failed' && (

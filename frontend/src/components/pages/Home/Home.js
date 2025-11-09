@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchSongs, fetchNewSpotifySongs, deleteSoundCloudMatch, checkSongInPlaylist } from '../../../api/api';
-import LoadingSpinner from '../../common/LoadingSpinner';
+import { LoadingSpinner, Pagination, ConfirmDeleteButton } from '../../common';
 import Header from '../../layout/Header';
-import Pagination from '../../common/Pagination';
 import SongItem from '../../shared/SongItem';
-import { FaTimes, FaSyncAlt, FaExclamationTriangle, FaMinus } from 'react-icons/fa';
+import { FaSyncAlt, FaMinus } from 'react-icons/fa';
 import './Home.css';
 
 const Home = () => {
@@ -180,20 +179,17 @@ const Home = () => {
                             ) : savedSongs.length > 0 ? (
                                 savedSongs.map((song) => (
                                     <SongItem
-                                        key={song.id}
+                                        key={song.spotify_id}
                                         song={song}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             navigate(`/saved_song/${song.spotify_id}`);
                                         }}
                                         actionButton={
-                                            <button 
-                                                className={`delete-match-button ${confirmDelete === song.spotify_id ? 'confirm' : ''}`}
-                                                onClick={(e) => handleDeleteMatch(e, song.spotify_id)}
-                                                title={confirmDelete === song.spotify_id ? "Click again to confirm" : "Remove match"}
-                                            >
-                                                {confirmDelete === song.spotify_id ? <FaExclamationTriangle /> : <FaTimes />}
-                                            </button>
+                                            <ConfirmDeleteButton
+                                                onDelete={(e) => handleDeleteMatch(e, song.spotify_id)}
+                                                isConfirming={confirmDelete === song.spotify_id}
+                                            />
                                         }
                                     >
                                         <div className="song-added">

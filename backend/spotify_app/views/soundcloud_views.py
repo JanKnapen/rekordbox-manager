@@ -231,13 +231,17 @@ def get_download_status(request, spotify_id):
                 'has_match': True,
                 'download_status': soundcloud_song.download_status,
                 'download_progress': soundcloud_song.download_progress,
+                'bpm': soundcloud_song.bpm,
+                'key': soundcloud_song.key,
                 'soundcloud_data': serializer.data
             }, status=200)
         except SoundCloudSong.DoesNotExist:
             return Response({
                 'has_match': False,
                 'download_status': None,
-                'download_progress': 0
+                'download_progress': 0,
+                'bpm': None,
+                'key': None
             }, status=200)
         
     except SpotifySong.DoesNotExist:

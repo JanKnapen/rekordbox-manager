@@ -5,6 +5,7 @@ import Home from './components/pages/Home';
 import NewSong from './components/pages/NewSong';
 import SavedSong from './components/pages/SavedSong';
 import PlaylistManager from './components/pages/PlaylistManager';
+import PlaylistDetail from './components/pages/PlaylistDetail';
 import { PrivateRoute, PublicRoute } from './components/auth/ProtectedRoute';
 import './app.css';
 
@@ -33,6 +34,14 @@ function App() {
                     element={
                         <PrivateRoute>
                             <PlaylistManager />
+                        </PrivateRoute>
+                    }
+                />
+                <Route
+                    path="/playlist/:playlistId"
+                    element={
+                        <PrivateRoute>
+                            <PlaylistDetail />
                         </PrivateRoute>
                     }
                 />

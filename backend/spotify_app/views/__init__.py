@@ -24,6 +24,7 @@ from .playlist_views import (
     create_playlist,
     add_song_to_playlist,
     get_playlist_songs,
+    remove_song_from_playlist,
 )
 
 # Export all views
@@ -44,4 +45,5 @@ __all__ = [
     'create_playlist',
     'add_song_to_playlist',
     'get_playlist_songs',
+    'remove_song_from_playlist',
 ]

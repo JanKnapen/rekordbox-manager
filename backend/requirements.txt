@@ -5,3 +5,4 @@ requests>=2.25,<3.0
 django-cors-headers>=4.3.0
 django-environ>=0.9.0
 yt-dlp>=2024.0.0
+essentia-tensorflow>=2.1b6

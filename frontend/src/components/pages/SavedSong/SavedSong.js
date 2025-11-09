@@ -18,6 +18,8 @@ const SavedSong = () => {
     const [deleting, setDeleting] = useState(false);
     const [downloadStatus, setDownloadStatus] = useState(null);
     const [downloadProgress, setDownloadProgress] = useState(0);
+    const [bpm, setBpm] = useState(null);
+    const [musicKey, setMusicKey] = useState(null);
     const { id } = useParams();
     const navigate = useNavigate();
 
@@ -38,6 +40,8 @@ const SavedSong = () => {
                 if (statusData.has_match) {
                     setDownloadStatus(statusData.download_status);
                     setDownloadProgress(statusData.download_progress);
+                    setBpm(statusData.bpm);
+                    setMusicKey(statusData.key);
                 }
             } catch (err) {
                 setError(err?.detail || err?.message || JSON.stringify(err));
@@ -61,6 +65,8 @@ const SavedSong = () => {
                 if (statusData.has_match) {
                     setDownloadStatus(statusData.download_status);
                     setDownloadProgress(statusData.download_progress);
+                    setBpm(statusData.bpm);
+                    setMusicKey(statusData.key);
                     
                     // Stop polling when download is complete or failed
                     if (statusData.download_status === 'completed' || statusData.download_status === 'failed') {
@@ -143,7 +149,7 @@ const SavedSong = () => {
                     <div className="song-details">
                         <h2 style={{ marginBottom: '2rem' }}>Spotify Track</h2>
                         <SongHeader song={song} />
-                        <SongInfoGrid song={song} />
+                        <SongInfoGrid song={song} bpm={bpm} musicKey={musicKey} />
 
                         {soundcloudMatches && soundcloudMatches.length > 0 && (
                             <div className="soundcloud-matches" style={{ marginTop: '3rem' }}>

@@ -10,6 +10,100 @@ import yt_dlp
 from ..models import SoundCloudSong
 
 
+def analyze_audio(file_path, soundcloud_song_id):
+    """Analyze audio file to extract BPM and key using Essentia"""
+    try:
+        import essentia.standard as es
+        
+        soundcloud_song = SoundCloudSong.objects.get(id=soundcloud_song_id)
+        soundcloud_song.download_status = 'analyzing'
+        soundcloud_song.download_progress = 90
+        soundcloud_song.save()
+        
+        print(f"Analyzing audio: {file_path}")
+        
+        # Load audio file
+        loader = es.MonoLoader(filename=file_path)
+        audio = loader()
+        
+        # BPM Detection
+        soundcloud_song.download_progress = 92
+        soundcloud_song.save(update_fields=['download_progress'])
+        
+        rhythm_extractor = es.RhythmExtractor2013(method="multifeature")
+        bpm, beats, beats_confidence, _, beats_intervals = rhythm_extractor(audio)
+        
+        # Key Detection
+        soundcloud_song.download_progress = 95
+        soundcloud_song.save(update_fields=['download_progress'])
+        
+        key_extractor = es.KeyExtractor()
+        key, scale, strength = key_extractor(audio)
+        
+        # Convert to Camelot key notation
+        # Map includes both spellings (e.g., "Bb" and "B-flat")
+        camelot_map = {
+            # Major keys (outer wheel)
+            ('C', 'major'): '8B',
+            ('Db', 'major'): '3B',
+            ('D-flat', 'major'): '3B',
+            ('D', 'major'): '10B',
+            ('Eb', 'major'): '5B',
+            ('E-flat', 'major'): '5B',
+            ('E', 'major'): '12B',
+            ('F', 'major'): '7B',
+            ('F#', 'major'): '2B',
+            ('Gb', 'major'): '2B',
+            ('G', 'major'): '9B',
+            ('Ab', 'major'): '4B',
+            ('A-flat', 'major'): '4B',
+            ('A', 'major'): '11B',
+            ('Bb', 'major'): '6B',
+            ('B-flat', 'major'): '6B',
+            ('B', 'major'): '1B',
+            # Minor keys (inner wheel)
+            ('C', 'minor'): '5A',
+            ('Db', 'minor'): '12A',
+            ('D-flat', 'minor'): '12A',
+            ('D', 'minor'): '7A',
+            ('Eb', 'minor'): '2A',
+            ('E-flat', 'minor'): '2A',
+            ('E', 'minor'): '9A',
+            ('F', 'minor'): '4A',
+            ('F#', 'minor'): '11A',
+            ('Gb', 'minor'): '11A',
+            ('G', 'minor'): '6A',
+            ('Ab', 'minor'): '1A',
+            ('A-flat', 'minor'): '1A',
+            ('A', 'minor'): '8A',
+            ('Bb', 'minor'): '3A',
+            ('B-flat', 'minor'): '3A',
+            ('B', 'minor'): '10A',
+        }
+        
+        # Get Camelot notation
+        formatted_key = camelot_map.get((key, scale), f"{key} {scale}")
+        
+        # Update database with results
+        soundcloud_song.bpm = round(bpm)  # Round to whole number
+        soundcloud_song.key = formatted_key
+        soundcloud_song.download_status = 'completed'
+        soundcloud_song.download_progress = 100
+        soundcloud_song.save()
+        
+        print(f"Analysis complete - BPM: {round(bpm)}, Key: {formatted_key}")
+        
+    except Exception as e:
+        print(f"Error analyzing audio: {e}")
+        try:
+            soundcloud_song = SoundCloudSong.objects.get(id=soundcloud_song_id)
+            soundcloud_song.download_status = 'completed'  # Still mark as completed even if analysis fails
+            soundcloud_song.download_progress = 100
+            soundcloud_song.save()
+        except:
+            pass
+
+
 def download_soundcloud_track(url, title, artist, soundcloud_song_id):
     """Download SoundCloud track using yt-dlp in background"""
     try:
@@ -28,33 +122,33 @@ def download_soundcloud_track(url, title, artist, soundcloud_song_id):
         def progress_hook(d):
             if d['status'] == 'downloading':
                 try:
-                    # Calculate percentage (0-90% for download, 90-100% for conversion)
+                    # Calculate percentage (0-80% for download)
                     downloaded = d.get('downloaded_bytes', 0)
                     total = d.get('total_bytes') or d.get('total_bytes_estimate', 0)
                     
                     if total > 0:
-                        # Scale download progress to 0-90%
-                        progress = int((downloaded / total) * 90)
+                        # Scale download progress to 0-80%
+                        progress = int((downloaded / total) * 80)
                         # Update database
                         soundcloud_song.download_progress = progress
                         soundcloud_song.save(update_fields=['download_progress'])
                 except Exception as e:
                     print(f"Error updating progress: {e}")
             elif d['status'] == 'finished':
-                # Download finished, conversion starting (90%)
-                soundcloud_song.download_progress = 90
+                # Download finished, conversion starting (80%)
+                soundcloud_song.download_progress = 80
                 soundcloud_song.save(update_fields=['download_progress'])
         
         # Post-processing hook to track conversion
         def postprocessor_hook(d):
             if d['status'] == 'started':
-                soundcloud_song.download_progress = 90
+                soundcloud_song.download_progress = 80
                 soundcloud_song.save(update_fields=['download_progress'])
             elif d['status'] == 'processing':
-                soundcloud_song.download_progress = 95
+                soundcloud_song.download_progress = 85
                 soundcloud_song.save(update_fields=['download_progress'])
             elif d['status'] == 'finished':
-                soundcloud_song.download_progress = 100
+                soundcloud_song.download_progress = 90
                 soundcloud_song.save(update_fields=['download_progress'])
         
         # Configure yt-dlp options
@@ -78,17 +172,21 @@ def download_soundcloud_track(url, title, artist, soundcloud_song_id):
         
         # Fix file permissions (666 = rw-rw-rw-)
         # This allows the host user to read/write the file
+        download_file = os.path.join(download_path, f'{artist} - {title}.mp3')
         try:
-            download_file = os.path.join(download_path, f'{artist} - {title}.mp3')
             if os.path.exists(download_file):
                 os.chmod(download_file, 0o666)
         except Exception as e:
             print(f"Warning: Could not change permissions: {e}")
-            
-        # Mark as completed
-        soundcloud_song.download_status = 'completed'
-        soundcloud_song.download_progress = 100
-        soundcloud_song.save()
+        
+        # Analyze audio file for BPM and key
+        if os.path.exists(download_file):
+            analyze_audio(download_file, soundcloud_song_id)
+        else:
+            # If file doesn't exist, just mark as completed
+            soundcloud_song.download_status = 'completed'
+            soundcloud_song.download_progress = 100
+            soundcloud_song.save()
             
     except Exception as e:
         print(f"Error downloading {artist} - {title}: {e}")

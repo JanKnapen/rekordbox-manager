@@ -1,0 +1,38 @@
+.confirm-delete-button {
+    background-color: #ef4444;  /* Red color */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    height: 50px;
+    width: 50px;
+    min-width: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    font-size: 1.2rem;
+}
+
+.confirm-delete-button:hover {
+    background-color: #dc2626;  /* Darker red on hover */
+}
+
+.confirm-delete-button.confirm {
+    background-color: #f59e0b;  /* Orange/amber color for confirmation */
+    animation: pulse 0.5s ease-in-out;
+}
+
+.confirm-delete-button.confirm:hover {
+    background-color: #d97706;  /* Darker orange on hover */
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}

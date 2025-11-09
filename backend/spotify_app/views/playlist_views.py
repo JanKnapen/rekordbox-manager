@@ -136,3 +136,58 @@ def get_playlist_songs(request, playlist_id):
         return Response({'error': 'Playlist not found'}, status=404)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def remove_song_from_playlist(request, playlist_id, spotify_id):
+    """Remove a song from a playlist"""
+    try:
+        playlist = Playlist.objects.get(id=playlist_id)
+        spotify_song = SpotifySong.objects.get(spotify_id=spotify_id)
+        
+        # Find and delete the PlaylistSong entry
+        playlist_song = PlaylistSong.objects.filter(
+            playlist=playlist,
+            spotify_song=spotify_song
+        ).first()
+        
+        if not playlist_song:
+            return Response({'error': 'Song not in this playlist'}, status=404)
+        
+        # Delete the PlaylistSong entry
+        playlist_song.delete()
+        
+        # Mark song as not in any playlist
+        spotify_song.in_playlist = False
+        spotify_song.save()
+        
+        # Delete mp3 file from playlist directory if it exists
+        try:
+            soundcloud_song = SoundCloudSong.objects.get(spotify_song=spotify_song)
+            download_path = os.getenv('DOWNLOAD_PATH', '/downloads')
+            playlist_dir = os.path.join(download_path, playlist.name)
+            playlist_file = os.path.join(playlist_dir, f'{soundcloud_song.artist} - {soundcloud_song.title}.mp3')
+            
+            if os.path.exists(playlist_file):
+                os.remove(playlist_file)
+                print(f"Removed file from playlist: {playlist_file}")
+        except SoundCloudSong.DoesNotExist:
+            pass  # Song doesn't have a SoundCloud match
+        except Exception as e:
+            print(f"Warning: Could not remove file from playlist: {e}")
+        
+        # Reorder remaining songs in the playlist
+        remaining_songs = PlaylistSong.objects.filter(playlist=playlist).order_by('position')
+        for index, ps in enumerate(remaining_songs):
+            if ps.position != index:
+                ps.position = index
+                ps.save()
+        
+        return Response({'success': True}, status=200)
+    except Playlist.DoesNotExist:
+        return Response({'error': 'Playlist not found'}, status=404)
+    except SpotifySong.DoesNotExist:
+        return Response({'error': 'Song not found'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)

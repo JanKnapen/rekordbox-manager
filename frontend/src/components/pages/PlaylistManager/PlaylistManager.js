@@ -158,6 +158,8 @@ function PlaylistManager() {
                   className="playlist-item"
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, playlist)}
+                  onClick={() => navigate(`/playlist/${playlist.id}`)}
+                  style={{ cursor: 'pointer' }}
                 >
                   <div className="playlist-name">{playlist.name}</div>
                   <div className="playlist-count">{playlist.song_count} songs</div>

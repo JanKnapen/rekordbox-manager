@@ -15,14 +15,14 @@ const Header = ({ showHome = false, showPlaylistManager = false }) => {
         <header className="page-header">
             <h1>RekordBox Manager</h1>
             <div className="header-right">
-                {showPlaylistManager && (
-                    <button onClick={() => navigate('/playlist-manager')} className="playlist-manager-button">
-                        Playlist Manager
-                    </button>
-                )}
                 {showHome && (
                     <button onClick={() => navigate('/home')} className="home-button">
                         Home
+                    </button>
+                )}
+                {showPlaylistManager && (
+                    <button onClick={() => navigate('/playlist-manager')} className="playlist-manager-button">
+                        Playlist Manager
                     </button>
                 )}
                 <button onClick={handleLogout} className="logout-button">

@@ -186,4 +186,13 @@ export const addSongToPlaylist = async (playlistId, spotifyId) => {
     }
 };
 
+export const removeSongFromPlaylist = async (playlistId, spotifyId) => {
+    try {
+        const response = await api.delete(`/api/spotify/playlists/${playlistId}/remove-song/${spotifyId}/`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
 export default api;

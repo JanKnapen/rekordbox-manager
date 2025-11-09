@@ -9,4 +9,4 @@ class SpotifySongSerializer(serializers.ModelSerializer):
 class SoundCloudSongSerializer(serializers.ModelSerializer):
     class Meta:
         model = SoundCloudSong
-        fields = ['id', 'spotify_song', 'soundcloud_id', 'title', 'artist', 'icon', 'duration_ms', 'url', 'stream_url', 'created_at', 'download_status', 'download_progress']
+        fields = ['id', 'spotify_song', 'soundcloud_id', 'title', 'artist', 'icon', 'duration_ms', 'url', 'stream_url', 'created_at', 'download_status', 'download_progress', 'bpm', 'key']

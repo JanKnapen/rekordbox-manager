@@ -117,7 +117,7 @@
 
 .song-info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
     margin-top: 2rem;
     padding-top: 2rem;
@@ -128,6 +128,10 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+}
+
+.info-item.full-width {
+    grid-column: 1 / -1;
 }
 
 .info-item label {
@@ -396,6 +400,21 @@
 
 .download-status.success .status-text {
     color: #22c55e;
+}
+
+.audio-info {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.bpm-info, .key-info {
+    background: #e0f2fe;
+    color: #0c4a6e;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-weight: 600;
 }
 
 .download-status.failed {

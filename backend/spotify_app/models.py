@@ -20,6 +20,7 @@ class SoundCloudSong(models.Model):
     DOWNLOAD_STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('downloading', 'Downloading'),
+        ('analyzing', 'Analyzing'),
         ('completed', 'Completed'),
         ('failed', 'Failed'),
     ]
@@ -35,6 +36,8 @@ class SoundCloudSong(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     download_status = models.CharField(max_length=20, choices=DOWNLOAD_STATUS_CHOICES, default='pending')
     download_progress = models.IntegerField(default=0)  # 0-100
+    bpm = models.FloatField(null=True, blank=True)  # Beats per minute
+    key = models.CharField(max_length=10, null=True, blank=True)  # Musical key (e.g., "A", "C#m")
 
     def __str__(self):
         return f"{self.title} - {self.artist} (SoundCloud)"

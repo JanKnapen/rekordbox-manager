@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FiRefreshCw } from 'react-icons/fi';
 import './Header.css';
 
-const Header = ({ showHome = false, showPlaylistManager = false }) => {
+const Header = ({ showHome = false, showPlaylistManager = false, showSync = false, onSyncClick }) => {
     const navigate = useNavigate();
 
     const handleLogout = () => {
@@ -23,6 +24,11 @@ const Header = ({ showHome = false, showPlaylistManager = false }) => {
                 {showPlaylistManager && (
                     <button onClick={() => navigate('/playlist-manager')} className="playlist-manager-button">
                         Playlist Manager
+                    </button>
+                )}
+                {showSync && (
+                    <button onClick={onSyncClick} className="sync-button" title="Sync to Rekordbox">
+                        <FiRefreshCw /> Sync
                     </button>
                 )}
                 <button onClick={handleLogout} className="logout-button">

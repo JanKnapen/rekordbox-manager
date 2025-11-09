@@ -27,6 +27,11 @@ from .playlist_views import (
     remove_song_from_playlist,
 )
 
+# Rekordbox views
+from .rekordbox_views import (
+    sync_rekordbox,
+)
+
 # Export all views
 __all__ = [
     # Spotify
@@ -46,4 +51,6 @@ __all__ = [
     'add_song_to_playlist',
     'get_playlist_songs',
     'remove_song_from_playlist',
+    # Rekordbox
+    'sync_rekordbox',
 ]

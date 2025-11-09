@@ -39,14 +39,16 @@ def get_spotify_songs(request):
     songs_data = []
     for song in songs:
         song_dict = SpotifySongSerializer(song).data
-        # Try to get BPM and key from related SoundCloudSong
+        # Try to get BPM, key, and download status from related SoundCloudSong
         try:
             soundcloud_song = song.soundcloud_match
             song_dict['bpm'] = soundcloud_song.bpm
             song_dict['key'] = soundcloud_song.key
+            song_dict['download_status'] = soundcloud_song.download_status
         except:
             song_dict['bpm'] = None
             song_dict['key'] = None
+            song_dict['download_status'] = None
         songs_data.append(song_dict)
     
     return Response({

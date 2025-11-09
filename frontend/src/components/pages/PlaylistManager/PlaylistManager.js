@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../../layout';
-import { LoadingSpinner, Snackbar } from '../../common';
+import { LoadingSpinner, Snackbar, RekordboxSyncModal } from '../../common';
 import { SongMetadata } from '../../shared';
 import { fetchSongs, getPlaylists, createPlaylist, addSongToPlaylist } from '../../../api/api';
 import './PlaylistManager.css';
@@ -16,6 +16,7 @@ function PlaylistManager() {
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [snackbar, setSnackbar] = useState(null);
+  const [showSyncModal, setShowSyncModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -57,6 +58,16 @@ function PlaylistManager() {
   };
 
   const handleDragStart = (e, song) => {
+    // Check if song is fully downloaded and analyzed
+    if (!song.download_status || song.download_status !== 'completed') {
+      e.preventDefault();
+      setSnackbar({ 
+        message: `"${song.title}" is not ready yet. Please wait for download and analysis to complete.`, 
+        type: 'error' 
+      });
+      return;
+    }
+    
     setDraggingSong(song);
     e.dataTransfer.effectAllowed = 'copy';
   };
@@ -90,11 +101,23 @@ function PlaylistManager() {
     }
   };
 
+  const handleSyncSuccess = (result) => {
+    setShowSyncModal(false);
+    setSnackbar({ 
+      message: result.message || 'Successfully synced to Rekordbox!', 
+      type: 'success' 
+    });
+  };
+
   if (loading) return <LoadingSpinner />;
 
   return (
     <div className="playlist-manager">
-      <Header showHome={true} />
+      <Header 
+        showHome={true} 
+        showSync={true}
+        onSyncClick={() => setShowSyncModal(true)}
+      />
       <div className="content">
         <h1>Playlist Manager</h1>
 
@@ -107,24 +130,36 @@ function PlaylistManager() {
               <h2>Saved Songs ({songs.length})</h2>
             </div>
             <div className="songs-list">
-              {songs.map(song => (
-                <div
-                  key={song.spotify_id}
-                  className="song-item"
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, song)}
-                  onDragEnd={handleDragEnd}
-                  onClick={() => navigate(`/saved_song/${song.spotify_id}`)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {song.icon && <img src={song.icon} alt={song.title} />}
-                  <div className="song-info">
-                    <div className="song-title">{song.title}</div>
-                    <div className="song-artist">{song.artist}</div>
-                    <SongMetadata bpm={song.bpm} musicKey={song.key} />
+              {songs.map(song => {
+                const isReady = song.download_status === 'completed';
+                return (
+                  <div
+                    key={song.spotify_id}
+                    className={`song-item ${!isReady ? 'not-ready' : ''}`}
+                    draggable={isReady}
+                    onDragStart={(e) => handleDragStart(e, song)}
+                    onDragEnd={handleDragEnd}
+                    onClick={() => navigate(`/saved_song/${song.spotify_id}`)}
+                    style={{ cursor: isReady ? 'grab' : 'pointer' }}
+                    title={!isReady ? 'Song is still downloading/analyzing' : ''}
+                  >
+                    {song.icon && <img src={song.icon} alt={song.title} />}
+                    <div className="song-info">
+                      <div className="song-title">{song.title}</div>
+                      <div className="song-artist">{song.artist}</div>
+                      <SongMetadata bpm={song.bpm} musicKey={song.key} />
+                      {!isReady && (
+                        <div className="status-badge">
+                          {song.download_status === 'downloading' && '⏳ Downloading...'}
+                          {song.download_status === 'analyzing' && '🔍 Analyzing...'}
+                          {(!song.download_status || song.download_status === 'pending') && '⏳ Pending...'}
+                          {song.download_status === 'failed' && '❌ Failed'}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -176,6 +211,12 @@ function PlaylistManager() {
           message={snackbar.message}
           type={snackbar.type}
           onClose={() => setSnackbar(null)}
+        />
+      )}
+      {showSyncModal && (
+        <RekordboxSyncModal
+          onClose={() => setShowSyncModal(false)}
+          onSuccess={handleSyncSuccess}
         />
       )}
     </div>

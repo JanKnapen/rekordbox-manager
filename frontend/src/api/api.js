@@ -195,4 +195,13 @@ export const removeSongFromPlaylist = async (playlistId, spotifyId) => {
     }
 };
 
+export const syncRekordbox = async (databasePath) => {
+    try {
+        const response = await api.post('/api/spotify/rekordbox/sync/', { database_path: databasePath });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
 export default api;

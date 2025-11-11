@@ -62,24 +62,20 @@ def add_song_to_playlist(request, playlist_id):
         playlist = Playlist.objects.get(id=playlist_id)
         spotify_song = SpotifySong.objects.get(spotify_id=spotify_id)
         
-        # Check if song is already in any playlist
-        if spotify_song.in_playlist:
-            return Response({'error': 'Song is already in another playlist'}, status=400)
-        
         # Get the highest position in the playlist
         max_position = PlaylistSong.objects.filter(playlist=playlist).count()
-        
-        # Add song to playlist
+
+        # Add song to playlist. Rely on unique_together constraint to prevent duplicates in the same playlist.
         playlist_song, created = PlaylistSong.objects.get_or_create(
             playlist=playlist,
             spotify_song=spotify_song,
             defaults={'position': max_position}
         )
-        
+
         if not created:
             return Response({'error': 'Song already in playlist'}, status=400)
-        
-        # Mark song as in_playlist
+
+        # Mark song as in at least one playlist
         spotify_song.in_playlist = True
         spotify_song.save()
         
@@ -118,18 +114,22 @@ def delete_playlist(request, playlist_id):
     try:
         playlist = Playlist.objects.get(id=playlist_id)
 
-        # For every PlaylistSong, mark the spotify_song as not in a playlist
+        # Collect spotify_song ids for songs that will be affected
         playlist_songs = PlaylistSong.objects.filter(playlist=playlist).select_related('spotify_song')
-        for ps in playlist_songs:
-            try:
-                sp = ps.spotify_song
-                sp.in_playlist = False
-                sp.save()
-            except Exception:
-                pass
+        affected_song_ids = [ps.spotify_song.id for ps in playlist_songs]
 
         # Delete PlaylistSong rows
         playlist_songs.delete()
+
+        # For each affected spotify song, update its in_playlist flag depending on whether it is in any other playlist
+        for song_id in affected_song_ids:
+            try:
+                sp = SpotifySong.objects.get(id=song_id)
+                still_in_any = PlaylistSong.objects.filter(spotify_song=sp).exists()
+                sp.in_playlist = bool(still_in_any)
+                sp.save()
+            except Exception:
+                pass
 
         # Optionally remove playlist directory in downloads
         try:
@@ -202,16 +202,20 @@ def remove_song_from_playlist(request, playlist_id, spotify_id):
             playlist=playlist,
             spotify_song=spotify_song
         ).first()
-        
+
         if not playlist_song:
             return Response({'error': 'Song not in this playlist'}, status=404)
-        
+
         # Delete the PlaylistSong entry
         playlist_song.delete()
-        
-        # Mark song as not in any playlist
-        spotify_song.in_playlist = False
-        spotify_song.save()
+
+        # Mark song as in any playlist depending on remaining PlaylistSong rows
+        try:
+            still_in_any = PlaylistSong.objects.filter(spotify_song=spotify_song).exists()
+            spotify_song.in_playlist = bool(still_in_any)
+            spotify_song.save()
+        except Exception:
+            pass
         
         # Delete mp3 file from playlist directory if it exists
         try:

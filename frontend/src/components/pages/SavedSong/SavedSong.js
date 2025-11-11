@@ -5,9 +5,10 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import Header from '../../layout/Header';
 import SongHeader from '../../shared/SongHeader';
 import SongInfoGrid from '../../shared/SongInfoGrid';
+import { SongDetails } from '../../shared';
 import DownloadStatus from '../../shared/DownloadStatus';
 import { FaTimes, FaExternalLinkAlt, FaExclamationTriangle } from 'react-icons/fa';
-import '../NewSong/NewSong.css';
+import '../../shared/SongDetails.css';
 
 const SavedSong = () => {
     const [song, setSong] = useState(null);
@@ -146,8 +147,7 @@ const SavedSong = () => {
 
             <div className="content">
                 {song && (
-                    <div className="song-details">
-                        <h2 style={{ marginBottom: '2rem' }}>Spotify Track</h2>
+                    <SongDetails>
                         <SongHeader song={song} />
                         <SongInfoGrid song={song} bpm={bpm} musicKey={musicKey} />
 
@@ -218,7 +218,7 @@ const SavedSong = () => {
                                 )}
                             </button>
                         </div>
-                    </div>
+                        </SongDetails>
                 )}
             </div>
         </div>

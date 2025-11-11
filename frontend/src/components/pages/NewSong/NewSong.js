@@ -7,7 +7,8 @@ import SongHeader from '../../shared/SongHeader';
 import SongInfoGrid from '../../shared/SongInfoGrid';
 import SoundCloudMatchItem from '../../shared/SoundCloudMatchItem';
 import { FaRedo, FaExclamationTriangle } from 'react-icons/fa';
-import './NewSong.css';
+import { SongDetails } from '../../shared';
+import '../../shared/SongDetails.css';
 
 const NewSong = () => {
     const [song, setSong] = useState(null);
@@ -92,10 +93,10 @@ const NewSong = () => {
                 </div>
             ) : song ? (
                 <div className="content">
-                    <div className="song-details">
+                    <SongDetails>
                         <SongHeader song={song} />
                         <SongInfoGrid song={song} />
-                    </div>
+                    </SongDetails>
                     
                     {/* SoundCloud Matches */}
                     <div className="soundcloud-matches">

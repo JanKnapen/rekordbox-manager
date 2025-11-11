@@ -3,10 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../../layout';
 import { LoadingSpinner, Snackbar, ConfirmDeleteButton } from '../../common';
 import { FaTimes, FaExclamationTriangle } from 'react-icons/fa';
-import { SongMetadata } from '../../shared';
+import { SongMetadata, PlaylistDetails } from '../../shared';
 import { getPlaylistSongs, getPlaylists, removeSongFromPlaylist, deletePlaylist } from '../../../api/api';
 import './PlaylistDetail.css';
-import '../NewSong/NewSong.css';
+import '../../shared/SongDetails.css';
 
 function PlaylistDetail() {
   const { playlistId } = useParams();
@@ -117,42 +117,37 @@ function PlaylistDetail() {
     <div className="playlist-detail">
       <Header showHome={true} showPlaylistManager={true} />
       <div className="content">
-        <div className="song-details">
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
-            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-              <div className="placeholder-icon-large" style={{ width: 120, height: 120, fontSize: '2rem' }}>🎧</div>
-              <div className="song-header-info">
-                <h2 style={{ marginBottom: '0.25rem' }}>{playlistName}</h2>
-                <div className="album" style={{ marginTop: '0.5rem' }}>
-                  {songs.length} songs
-                  {playlistMeta && playlistMeta.created_at && (
-                    <> • {new Date(playlistMeta.created_at).toLocaleDateString()}</>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <button
-                className={`delete-saved-button ${confirmDeletePlaylist ? 'confirm' : ''}`}
-                onClick={handleDeletePlaylist}
-                title={confirmDeletePlaylist ? 'Click again to confirm deletion' : 'Delete Playlist'}
-              >
-                {confirmDeletePlaylist ? (
-                  <>
-                    <FaExclamationTriangle style={{ marginRight: '0.5rem' }} />
-                    Click Again to Confirm
-                  </>
-                ) : (
-                  <>
-                    <FaTimes style={{ marginRight: '0.5rem' }} />
-                    Delete Playlist
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+        <PlaylistDetails
+          title={playlistName}
+          metaLine={(
+            <>
+              {songs.length} songs
+              {playlistMeta && playlistMeta.created_at && (
+                <> • {new Date(playlistMeta.created_at).toLocaleDateString()}</>
+              )}
+            </>
+          )}
+          icon={playlistMeta?.icon}
+          actionButton={(
+            <button
+              className={`delete-saved-button ${confirmDeletePlaylist ? 'confirm' : ''}`}
+              onClick={handleDeletePlaylist}
+              title={confirmDeletePlaylist ? 'Click again to confirm deletion' : 'Delete Playlist'}
+            >
+              {confirmDeletePlaylist ? (
+                <>
+                  <FaExclamationTriangle style={{ marginRight: '0.5rem' }} />
+                  Click Again to Confirm
+                </>
+              ) : (
+                <>
+                  <FaTimes style={{ marginRight: '0.5rem' }} />
+                  Delete Playlist
+                </>
+              )}
+            </button>
+          )}
+        />
 
         {error && <div className="error-message">{error}</div>}
 

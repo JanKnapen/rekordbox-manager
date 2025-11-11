@@ -4,6 +4,7 @@ import { fetchSongs, fetchNewSpotifySongs, deleteSoundCloudMatch, checkSongInPla
 import { LoadingSpinner, Pagination, ConfirmDeleteButton } from '../../common';
 import Header from '../../layout/Header';
 import SongItem from '../../shared/SongItem';
+import { openInNewTabOrNavigate } from '../../../utils/navHelper';
 import { FaSyncAlt, FaMinus } from 'react-icons/fa';
 import './Home.css';
 
@@ -181,10 +182,7 @@ const Home = () => {
                                     <SongItem
                                         key={song.spotify_id}
                                         song={song}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            navigate(`/saved_song/${song.spotify_id}`);
-                                        }}
+                                            onClick={(e) => openInNewTabOrNavigate(e, navigate, `/saved_song/${song.spotify_id}`)}
                                         actionButton={
                                             <ConfirmDeleteButton
                                                 onDelete={(e) => handleDeleteMatch(e, song.spotify_id)}
@@ -223,10 +221,7 @@ const Home = () => {
                                     <SongItem
                                         key={song.spotify_id}
                                         song={song}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            navigate(`/new_song/${song.spotify_id}`);
-                                        }}
+                                        onClick={(e) => openInNewTabOrNavigate(e, navigate, `/new_song/${song.spotify_id}`)}
                                         actionButton={
                                             <button 
                                                 className="check-song-button"

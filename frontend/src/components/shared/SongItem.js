@@ -3,10 +3,11 @@ import React from 'react';
 const SongItem = ({ song, onClick, actionButton, children }) => {
     return (
         <div 
-            className="song-item"
-            onClick={onClick}
-            style={{ cursor: onClick ? 'pointer' : 'default' }}
-        >
+                className="song-item"
+                onClick={onClick}
+                onAuxClick={onClick}
+                style={{ cursor: onClick ? 'pointer' : 'default' }}
+            >
             <div className="song-icon">
                 {song.icon ? (
                     <img src={song.icon} alt={song.title} />

@@ -4,6 +4,7 @@ import { Header } from '../../layout';
 import { LoadingSpinner, Snackbar, RekordboxSyncModal, ConfirmDeleteButton, Pagination } from '../../common';
 import { SongMetadata } from '../../shared';
 import { fetchSongs, getPlaylists, createPlaylist, addSongToPlaylist, deletePlaylist } from '../../../api/api';
+import { openInNewTabOrNavigate } from '../../../utils/navHelper';
 import './PlaylistManager.css';
 
 function PlaylistManager() {
@@ -283,7 +284,8 @@ function PlaylistManager() {
                       draggable={isReady}
                       onDragStart={(e) => handleDragStart(e, song)}
                       onDragEnd={handleDragEnd}
-                      onClick={() => navigate(`/saved_song/${song.spotify_id}`)}
+                      onClick={(e) => openInNewTabOrNavigate(e, navigate, `/saved_song/${song.spotify_id}`)}
+                      onAuxClick={(e) => openInNewTabOrNavigate(e, navigate, `/saved_song/${song.spotify_id}`)}
                       style={{ cursor: isReady ? 'grab' : 'pointer' }}
                       title={!isReady ? 'Song is still downloading/analyzing' : ''}
                     >
@@ -340,7 +342,8 @@ function PlaylistManager() {
                   className="playlist-item"
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, playlist)}
-                  onClick={() => navigate(`/playlist/${playlist.id}`)}
+                  onClick={(e) => openInNewTabOrNavigate(e, navigate, `/playlist/${playlist.id}`)}
+                  onAuxClick={(e) => openInNewTabOrNavigate(e, navigate, `/playlist/${playlist.id}`)}
                   style={{ cursor: 'pointer' }}
                 >
                   <div className="playlist-left">

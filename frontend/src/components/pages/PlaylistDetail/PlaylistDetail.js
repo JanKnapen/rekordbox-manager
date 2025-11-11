@@ -4,6 +4,7 @@ import { Header } from '../../layout';
 import { LoadingSpinner, Snackbar, ConfirmDeleteButton } from '../../common';
 import { FaTimes, FaExclamationTriangle } from 'react-icons/fa';
 import { SongMetadata, PlaylistDetails } from '../../shared';
+import { openInNewTabOrNavigate } from '../../../utils/navHelper';
 import { getPlaylistSongs, getPlaylists, removeSongFromPlaylist, deletePlaylist } from '../../../api/api';
 import './PlaylistDetail.css';
 import '../../shared/SongDetails.css';
@@ -160,7 +161,7 @@ function PlaylistDetail() {
                 key={song.spotify_id}
                 className="song-item"
               >
-                <div className="song-content" onClick={() => navigate(`/saved_song/${song.spotify_id}`)}>
+                <div className="song-content" onClick={(e) => openInNewTabOrNavigate(e, navigate, `/saved_song/${song.spotify_id}`)} onAuxClick={(e) => openInNewTabOrNavigate(e, navigate, `/saved_song/${song.spotify_id}`)}>
                   {song.icon && <img src={song.icon} alt={song.title} />}
                   <div className="song-info">
                     <div className="song-title">{song.title}</div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { openInNewTabOrNavigate } from '../../utils/navHelper';
 import { FiRefreshCw } from 'react-icons/fi';
 import './Header.css';
 
@@ -17,12 +18,12 @@ const Header = ({ showHome = false, showPlaylistManager = false, showSync = fals
             <h1>RekordBox Manager</h1>
             <div className="header-right">
                 {showHome && (
-                    <button onClick={() => navigate('/home')} className="home-button">
+                    <button onClick={(e) => openInNewTabOrNavigate(e, navigate, '/home')} onAuxClick={(e) => openInNewTabOrNavigate(e, navigate, '/home')} className="home-button">
                         Home
                     </button>
                 )}
                 {showPlaylistManager && (
-                    <button onClick={() => navigate('/playlist-manager')} className="playlist-manager-button">
+                    <button onClick={(e) => openInNewTabOrNavigate(e, navigate, '/playlist-manager')} onAuxClick={(e) => openInNewTabOrNavigate(e, navigate, '/playlist-manager')} className="playlist-manager-button">
                         Playlist Manager
                     </button>
                 )}

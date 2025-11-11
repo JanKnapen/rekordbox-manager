@@ -13,7 +13,16 @@ function PlaylistManager() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [songsLoading, setSongsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [savedPage, setSavedPage] = useState(0);
+  const getInitialSavedPage = () => {
+    try {
+      const v = parseInt(localStorage.getItem('pm_savedPage') || '0', 10);
+      return isNaN(v) ? 0 : v;
+    } catch (e) {
+      return 0;
+    }
+  };
+
+  const [savedPage, setSavedPage] = useState(getInitialSavedPage);
   const [totalSavedPages, setTotalSavedPages] = useState(0);
   const SONGS_PER_PAGE = 15;
   const [draggingSong, setDraggingSong] = useState(null);
@@ -22,7 +31,15 @@ function PlaylistManager() {
   const [snackbar, setSnackbar] = useState(null);
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [showOnlyInPlaylist, setShowOnlyInPlaylist] = useState(false);
+  const getInitialShowOnly = () => {
+    try {
+      return localStorage.getItem('pm_showOnlyInPlaylist') === 'true';
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const [showOnlyInPlaylist, setShowOnlyInPlaylist] = useState(getInitialShowOnly);
 
   const mountedRef = useRef(false);
 
@@ -48,6 +65,24 @@ function PlaylistManager() {
     if (!mountedRef.current) return;
     loadSongsOnly();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedPage]);
+
+  // Persist view mode to localStorage so it survives reloads
+  useEffect(() => {
+    try {
+      localStorage.setItem('pm_showOnlyInPlaylist', showOnlyInPlaylist ? 'true' : 'false');
+    } catch (e) {
+      // ignore
+    }
+  }, [showOnlyInPlaylist]);
+
+  // Persist current saved page to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('pm_savedPage', String(savedPage));
+    } catch (e) {
+      // ignore
+    }
   }, [savedPage]);
 
   const loadInitialData = async () => {

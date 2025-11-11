@@ -39,6 +39,12 @@
   border-radius: 8px;
   padding: 1rem;
   border: 1px solid #e5e7eb;
+  height: 65vh;
+}
+
+/* Add spacing between the playlist info box and the songs list */
+.playlist-detail .song-details {
+  margin-bottom: 1.5rem;
 }
 
 .playlist-detail .song-item {

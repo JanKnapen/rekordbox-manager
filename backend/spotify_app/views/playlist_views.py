@@ -111,6 +111,46 @@ def add_song_to_playlist(request, playlist_id):
         return Response({'error': str(e)}, status=500)
 
 
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_playlist(request, playlist_id):
+    """Delete a playlist and remove associated playlist files (but keep SpotifySong entries)."""
+    try:
+        playlist = Playlist.objects.get(id=playlist_id)
+
+        # For every PlaylistSong, mark the spotify_song as not in a playlist
+        playlist_songs = PlaylistSong.objects.filter(playlist=playlist).select_related('spotify_song')
+        for ps in playlist_songs:
+            try:
+                sp = ps.spotify_song
+                sp.in_playlist = False
+                sp.save()
+            except Exception:
+                pass
+
+        # Delete PlaylistSong rows
+        playlist_songs.delete()
+
+        # Optionally remove playlist directory in downloads
+        try:
+            download_path = os.getenv('DOWNLOAD_PATH', '/downloads')
+            playlist_dir = os.path.join(download_path, playlist.name)
+            if os.path.exists(playlist_dir) and os.path.isdir(playlist_dir):
+                shutil.rmtree(playlist_dir)
+        except Exception as e:
+            # Non-fatal: log and continue
+            print(f"Warning: could not remove playlist directory: {e}")
+
+        # Finally delete playlist record
+        playlist.delete()
+
+        return Response({'success': True}, status=200)
+    except Playlist.DoesNotExist:
+        return Response({'error': 'Playlist not found'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_playlist_songs(request, playlist_id):

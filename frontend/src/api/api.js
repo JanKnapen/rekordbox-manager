@@ -56,15 +56,19 @@ export const loginUser = async (credentials) => {
   }
 };
 
-export const fetchSongs = async (page = 0, pageSize = 15, excludeInPlaylist = false) => {
+export const fetchSongs = async (page = 0, pageSize = 15, excludeInPlaylist = false, inPlaylist = null) => {
   try {
     const params = new URLSearchParams({
       page: page.toString(),
       page_size: pageSize.toString(),
     });
-    if (excludeInPlaylist) {
-      params.append('exclude_in_playlist', 'true');
-    }
+        // If caller explicitly requests in_playlist filtering, prefer that (server-side filter)
+        if (inPlaylist !== null) {
+            params.append('in_playlist', inPlaylist ? 'true' : 'false');
+        } else if (excludeInPlaylist) {
+            // Backwards-compatible behavior: request server to exclude songs already in playlists
+            params.append('exclude_in_playlist', 'true');
+        }
     const response = await api.get(`/api/spotify/songs/?${params.toString()}`);
     return response.data;
   } catch (error) {
@@ -162,6 +166,15 @@ export const getPlaylists = async () => {
 export const createPlaylist = async (name) => {
     try {
         const response = await api.post('/api/spotify/playlists/create/', { name });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const deletePlaylist = async (playlistId) => {
+    try {
+        const response = await api.delete(`/api/spotify/playlists/${playlistId}/delete/`);
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message;

@@ -1,44 +1,94 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../../layout';
-import { LoadingSpinner, Snackbar, RekordboxSyncModal } from '../../common';
+import { LoadingSpinner, Snackbar, RekordboxSyncModal, ConfirmDeleteButton, Pagination } from '../../common';
 import { SongMetadata } from '../../shared';
-import { fetchSongs, getPlaylists, createPlaylist, addSongToPlaylist } from '../../../api/api';
+import { fetchSongs, getPlaylists, createPlaylist, addSongToPlaylist, deletePlaylist } from '../../../api/api';
 import './PlaylistManager.css';
 
 function PlaylistManager() {
   const navigate = useNavigate();
   const [songs, setSongs] = useState([]);
   const [playlists, setPlaylists] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [songsLoading, setSongsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [savedPage, setSavedPage] = useState(0);
+  const [totalSavedPages, setTotalSavedPages] = useState(0);
+  const SONGS_PER_PAGE = 15;
   const [draggingSong, setDraggingSong] = useState(null);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [snackbar, setSnackbar] = useState(null);
   const [showSyncModal, setShowSyncModal] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [showOnlyInPlaylist, setShowOnlyInPlaylist] = useState(false);
 
+  const mountedRef = useRef(false);
+
+  // Initial load: playlists + songs (full-page spinner)
   useEffect(() => {
-    loadData();
+    const doInitial = async () => {
+      await loadInitialData();
+      mountedRef.current = true;
+    };
+    doInitial();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadData = async () => {
+  // When the view toggle changes after initial mount, only reload the songs list
+  useEffect(() => {
+    if (!mountedRef.current) return;
+    loadSongsOnly();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showOnlyInPlaylist]);
+
+  // When saved page changes after initial mount, only reload songs
+  useEffect(() => {
+    if (!mountedRef.current) return;
+    loadSongsOnly();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedPage]);
+
+  const loadInitialData = async () => {
     try {
-      setLoading(true);
+      setInitialLoading(true);
       setError(null);
-      
-      // Fetch all saved songs (exclude songs already in playlists)
-      const songsData = await fetchSongs(0, 1000, true); // Pass excludeInPlaylist=true
-      const savedSongs = songsData.songs.filter(song => song.is_saved);
+      // Fetch saved songs (default: exclude songs already in playlists)
+  // If showing only songs already in playlists, request server-side filter (in_playlist=true)
+  // Otherwise request server-side exclusion of in-playlist songs (exclude_in_playlist=true)
+  const songsData = await fetchSongs(savedPage, SONGS_PER_PAGE, !showOnlyInPlaylist, showOnlyInPlaylist ? true : null);
+      let savedSongs = songsData.songs.filter(song => song.is_saved);
+      if (showOnlyInPlaylist) {
+        savedSongs = savedSongs.filter(song => !!song.in_playlist);
+      }
       setSongs(savedSongs);
-      
+      setTotalSavedPages(songsData.total_pages || 0);
+
       // Fetch all playlists
       const playlistsData = await getPlaylists();
       setPlaylists(playlistsData);
     } catch (err) {
       setError(err.message || 'Failed to load data');
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+    }
+  };
+
+  const loadSongsOnly = async () => {
+    try {
+      setSongsLoading(true);
+  const songsData = await fetchSongs(savedPage, SONGS_PER_PAGE, !showOnlyInPlaylist, showOnlyInPlaylist ? true : null);
+      let savedSongs = songsData.songs.filter(song => song.is_saved);
+      if (showOnlyInPlaylist) {
+        savedSongs = savedSongs.filter(song => !!song.in_playlist);
+      }
+      setSongs(savedSongs);
+      setTotalSavedPages(songsData.total_pages || 0);
+    } catch (err) {
+      setSnackbar({ message: 'Failed to load songs: ' + (err.error || err.message), type: 'error' });
+    } finally {
+      setSongsLoading(false);
     }
   };
 
@@ -56,6 +106,37 @@ function PlaylistManager() {
       setSnackbar({ message: 'Failed to create playlist: ' + (err.error || err.message), type: 'error' });
     }
   };
+
+  const handleDeletePlaylist = async (e, playlistId) => {
+    // prevent navigation when clicking the delete button
+    e.stopPropagation && e.stopPropagation();
+
+    // first click: set confirming
+    if (confirmDelete !== playlistId) {
+      setConfirmDelete(playlistId);
+      return;
+    }
+
+    try {
+      await deletePlaylist(playlistId);
+      setPlaylists(playlists.filter(p => p.id !== playlistId));
+      setSnackbar({ message: 'Playlist deleted', type: 'success' });
+    } catch (err) {
+      setSnackbar({ message: 'Failed to delete playlist: ' + (err.error || err.message), type: 'error' });
+    } finally {
+      setConfirmDelete(null);
+    }
+  };
+
+  // Clear confirming state when clicking anywhere else on the page
+  useEffect(() => {
+    const onDocumentClick = () => {
+      if (confirmDelete !== null) setConfirmDelete(null);
+    };
+
+    document.addEventListener('click', onDocumentClick);
+    return () => document.removeEventListener('click', onDocumentClick);
+  }, [confirmDelete]);
 
   const handleDragStart = (e, song) => {
     // Check if song is fully downloaded and analyzed
@@ -88,7 +169,8 @@ function PlaylistManager() {
     try {
       await addSongToPlaylist(playlist.id, draggingSong.spotify_id);
       // Remove song from the list (it's now in a playlist)
-      setSongs(songs.filter(s => s.spotify_id !== draggingSong.spotify_id));
+      // reload current songs page to keep pagination consistent
+      await loadSongsOnly();
       // Update song count
       setPlaylists(playlists.map(p => 
         p.id === playlist.id 
@@ -109,7 +191,7 @@ function PlaylistManager() {
     });
   };
 
-  if (loading) return <LoadingSpinner />;
+  if (initialLoading) return <LoadingSpinner />;
 
   return (
     <div className="playlist-manager">
@@ -127,46 +209,74 @@ function PlaylistManager() {
           {/* Saved Songs Section */}
           <div className="songs-section">
             <div className="songs-header">
-              <h2>Saved Songs ({songs.length})</h2>
+                <h2>Saved Songs</h2>
+                <div style={{display: 'flex', gap: '1rem', alignItems: 'center'}}>
+                  <div className="view-toggle">
+                    <button
+                      className={`toggle-btn ${!showOnlyInPlaylist ? 'active' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); setShowOnlyInPlaylist(false); setSavedPage(0); }}
+                    >
+                      Not in playlists
+                    </button>
+                    <button
+                      className={`toggle-btn ${showOnlyInPlaylist ? 'active' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); setShowOnlyInPlaylist(true); setSavedPage(0); }}
+                    >
+                      In playlists
+                    </button>
+                  </div>
+                  <Pagination
+                    currentPage={savedPage}
+                    totalPages={totalSavedPages}
+                    onPrevious={() => setSavedPage(Math.max(0, savedPage - 1))}
+                    onNext={() => setSavedPage(Math.min(totalSavedPages - 1, savedPage + 1))}
+                  />
+                </div>
             </div>
             <div className="songs-list">
-              {songs.map(song => {
-                const isReady = song.download_status === 'completed';
-                return (
-                  <div
-                    key={song.spotify_id}
-                    className={`song-item ${!isReady ? 'not-ready' : ''}`}
-                    draggable={isReady}
-                    onDragStart={(e) => handleDragStart(e, song)}
-                    onDragEnd={handleDragEnd}
-                    onClick={() => navigate(`/saved_song/${song.spotify_id}`)}
-                    style={{ cursor: isReady ? 'grab' : 'pointer' }}
-                    title={!isReady ? 'Song is still downloading/analyzing' : ''}
-                  >
-                    {song.icon && <img src={song.icon} alt={song.title} />}
-                    <div className="song-info">
-                      <div className="song-title">{song.title}</div>
-                      <div className="song-artist">{song.artist}</div>
-                      <SongMetadata bpm={song.bpm} musicKey={song.key} />
-                      {!isReady && (
-                        <div className="status-badge">
-                          {song.download_status === 'downloading' && '⏳ Downloading...'}
-                          {song.download_status === 'analyzing' && '🔍 Analyzing...'}
-                          {(!song.download_status || song.download_status === 'pending') && '⏳ Pending...'}
-                          {song.download_status === 'failed' && '❌ Failed'}
-                        </div>
-                      )}
+              {songsLoading ? (
+                <div className="songs-loading">
+                  <LoadingSpinner />
+                </div>
+              ) : (
+                songs.map((song) => {
+                  const isReady = song.download_status === 'completed';
+                  return (
+                    <div
+                      key={song.spotify_id}
+                      className={`song-item ${!isReady ? 'not-ready' : ''}`}
+                      draggable={isReady}
+                      onDragStart={(e) => handleDragStart(e, song)}
+                      onDragEnd={handleDragEnd}
+                      onClick={() => navigate(`/saved_song/${song.spotify_id}`)}
+                      style={{ cursor: isReady ? 'grab' : 'pointer' }}
+                      title={!isReady ? 'Song is still downloading/analyzing' : ''}
+                    >
+                      {song.icon && <img src={song.icon} alt={song.title} />}
+                      <div className="song-info">
+                        <div className="song-title">{song.title}</div>
+                        <div className="song-artist">{song.artist}</div>
+                        <SongMetadata bpm={song.bpm} musicKey={song.key} />
+                        {!isReady && (
+                          <div className="status-badge">
+                            {song.download_status === 'downloading' && '⏳ Downloading...'}
+                            {song.download_status === 'analyzing' && '🔍 Analyzing...'}
+                            {(!song.download_status || song.download_status === 'pending') && '⏳ Pending...'}
+                            {song.download_status === 'failed' && '❌ Failed'}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
 
           {/* Playlists Section */}
           <div className="playlists-section">
             <div className="playlists-header">
-              <h2>Playlists ({playlists.length})</h2>
+              <h2>Playlists</h2>
               <button 
                 className="create-btn"
                 onClick={() => setShowCreateForm(!showCreateForm)}
@@ -198,8 +308,16 @@ function PlaylistManager() {
                   onClick={() => navigate(`/playlist/${playlist.id}`)}
                   style={{ cursor: 'pointer' }}
                 >
-                  <div className="playlist-name">{playlist.name}</div>
-                  <div className="playlist-count">{playlist.song_count} songs</div>
+                  <div className="playlist-left">
+                    <div className="playlist-name">{playlist.name}</div>
+                    <div className="playlist-count">{playlist.song_count} songs</div>
+                  </div>
+                  <ConfirmDeleteButton
+                    onDelete={(e) => handleDeletePlaylist(e, playlist.id)}
+                    isConfirming={confirmDelete === playlist.id}
+                    title={confirmDelete === playlist.id ? 'Click again to confirm delete' : 'Delete playlist'}
+                    className="playlist-delete-btn"
+                  />
                 </div>
               ))}
             </div>

@@ -12,15 +12,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = env('DJANGO_SECRET_KEY', default='your-secret-key')
 DEBUG = env('DJANGO_DEBUG', default=True)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'backend']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'backend', "192.168.68.113"]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://frontend:3000",
+    "http://192.168.68.113:3000",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = ["http://localhost:3000", "http://frontend:3000"]
+CSRF_TRUSTED_ORIGINS = ["http://localhost:3000", "http://frontend:3000", "http://192.168.68.113:3000"]
 
 # Application definition
 INSTALLED_APPS = [

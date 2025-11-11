@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../../layout';
 import { LoadingSpinner, Snackbar, ConfirmDeleteButton } from '../../common';
+import { FaTimes, FaExclamationTriangle } from 'react-icons/fa';
 import { SongMetadata } from '../../shared';
-import { getPlaylistSongs, getPlaylists, removeSongFromPlaylist } from '../../../api/api';
+import { getPlaylistSongs, getPlaylists, removeSongFromPlaylist, deletePlaylist } from '../../../api/api';
 import './PlaylistDetail.css';
+import '../NewSong/NewSong.css';
 
 function PlaylistDetail() {
   const { playlistId } = useParams();
@@ -13,8 +15,10 @@ function PlaylistDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [playlistName, setPlaylistName] = useState('');
+  const [playlistMeta, setPlaylistMeta] = useState(null);
   const [snackbar, setSnackbar] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmDeletePlaylist, setConfirmDeletePlaylist] = useState(false);
 
   useEffect(() => {
     loadPlaylistData();
@@ -30,6 +34,7 @@ function PlaylistDetail() {
       const currentPlaylist = playlists.find(p => p.id === parseInt(playlistId));
       if (currentPlaylist) {
         setPlaylistName(currentPlaylist.name);
+        setPlaylistMeta(currentPlaylist);
       }
       
       // Fetch songs in this playlist
@@ -72,15 +77,81 @@ function PlaylistDetail() {
     }
   };
 
+  const handleDeletePlaylist = async (e) => {
+    // prevent the document click handler from immediately clearing the confirm state
+    e && e.stopPropagation && e.stopPropagation();
+
+    // first click sets confirm state, second click performs delete
+    if (!confirmDeletePlaylist) {
+      setConfirmDeletePlaylist(true);
+      setSnackbar({ message: 'Click delete again to confirm playlist deletion', type: 'warning' });
+      // Also set a timeout as a fallback to clear the confirm state
+      setTimeout(() => setConfirmDeletePlaylist(false), 4000); // reset after 4s
+      return;
+    }
+
+    try {
+      await deletePlaylist(playlistId);
+      setSnackbar({ message: 'Playlist deleted', type: 'success' });
+      // navigate back to playlist manager
+      navigate('/playlist-manager');
+    } catch (err) {
+      setSnackbar({ message: 'Failed to delete playlist: ' + (err.error || err.message), type: 'error' });
+      setConfirmDeletePlaylist(false);
+    }
+  };
+
+  // Clear confirm state when clicking anywhere else on the page
+  useEffect(() => {
+    const onDocumentClick = () => {
+      if (confirmDeletePlaylist) setConfirmDeletePlaylist(false);
+    };
+
+    document.addEventListener('click', onDocumentClick);
+    return () => document.removeEventListener('click', onDocumentClick);
+  }, [confirmDeletePlaylist]);
+
   if (loading) return <LoadingSpinner />;
 
   return (
     <div className="playlist-detail">
       <Header showHome={true} showPlaylistManager={true} />
       <div className="content">
-        <div className="playlist-header">
-          <h1>{playlistName}</h1>
-          <p className="song-count">{songs.length} songs</p>
+        <div className="song-details">
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+              <div className="placeholder-icon-large" style={{ width: 120, height: 120, fontSize: '2rem' }}>🎧</div>
+              <div className="song-header-info">
+                <h2 style={{ marginBottom: '0.25rem' }}>{playlistName}</h2>
+                <div className="album" style={{ marginTop: '0.5rem' }}>
+                  {songs.length} songs
+                  {playlistMeta && playlistMeta.created_at && (
+                    <> • {new Date(playlistMeta.created_at).toLocaleDateString()}</>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <button
+                className={`delete-saved-button ${confirmDeletePlaylist ? 'confirm' : ''}`}
+                onClick={handleDeletePlaylist}
+                title={confirmDeletePlaylist ? 'Click again to confirm deletion' : 'Delete Playlist'}
+              >
+                {confirmDeletePlaylist ? (
+                  <>
+                    <FaExclamationTriangle style={{ marginRight: '0.5rem' }} />
+                    Click Again to Confirm
+                  </>
+                ) : (
+                  <>
+                    <FaTimes style={{ marginRight: '0.5rem' }} />
+                    Delete Playlist
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
 
         {error && <div className="error-message">{error}</div>}

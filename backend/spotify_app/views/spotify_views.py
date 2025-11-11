@@ -18,13 +18,21 @@ def get_spotify_songs(request):
     # Get pagination parameters from query string
     page = int(request.GET.get('page', 0))
     page_size = int(request.GET.get('page_size', 15))
-    exclude_in_playlist = request.GET.get('exclude_in_playlist', 'false').lower() == 'true'
-    
-    # Build query - optionally exclude songs already in playlists
-    if exclude_in_playlist:
-        query = SpotifySong.objects.filter(is_saved=True, in_playlist=False)
+    exclude_in_playlist = request.GET.get('exclude_in_playlist', None)
+    in_playlist = request.GET.get('in_playlist', None)
+
+    # Build query
+    # Priority: if explicit in_playlist param provided, use it (server-side filter for songs that are in a playlist)
+    # Else, if exclude_in_playlist was provided and true, use that old behaviour (compatibility)
+    if in_playlist is not None:
+        in_playlist_flag = in_playlist.lower() == 'true'
+        query = SpotifySong.objects.filter(is_saved=True, in_playlist=in_playlist_flag)
     else:
-        query = SpotifySong.objects.filter(is_saved=True)
+        exclude_flag = (exclude_in_playlist or 'false').lower() == 'true'
+        if exclude_flag:
+            query = SpotifySong.objects.filter(is_saved=True, in_playlist=False)
+        else:
+            query = SpotifySong.objects.filter(is_saved=True)
     
     # Get total count
     total_count = query.count()

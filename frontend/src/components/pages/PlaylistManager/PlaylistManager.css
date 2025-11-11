@@ -37,6 +37,34 @@
   min-height: 52px;
 }
 
+.playlist-manager .view-toggle {
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.playlist-manager .toggle-btn {
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #374151;
+  font-weight: 600;
+}
+
+.playlist-manager .toggle-btn.active {
+  background: #10b981;
+  color: #ffffff;
+  border-color: #10b981;
+}
+
+.playlist-manager .songs-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
 .playlist-manager .songs-section h2 {
   color: #1f2937;
   margin: 0;
@@ -205,12 +233,15 @@
 }
 
 .playlist-manager .playlist-item {
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem;
   background-color: #ffffff;
   border-radius: 8px;
-  border: 2px dashed #d1d5db;
-  transition: all 0.2s;
+  border: 2px solid transparent;
+  transition: all 0.15s;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .playlist-manager .playlist-item:hover {
@@ -219,11 +250,21 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.playlist-manager .playlist-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.playlist-manager .playlist-delete-btn {
+  margin-left: 1rem;
+  flex-shrink: 0;
+}
+
 .playlist-manager .playlist-name {
   color: #1f2937;
   font-weight: 600;
   font-size: 1.125rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .playlist-manager .playlist-count {

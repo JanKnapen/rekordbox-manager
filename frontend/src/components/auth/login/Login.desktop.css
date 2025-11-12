@@ -95,4 +95,9 @@
     .app-title {
         font-size: 2rem;
     }
+
+    /* Ensure inputs are large enough on mobile to avoid browser zoom on focus */
+    .login-input {
+        font-size: 16px;
+    }
 }

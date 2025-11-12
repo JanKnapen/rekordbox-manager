@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Header } from '../../layout';
+import { HeaderDesktop as Header } from '../../layout';
 import { LoadingSpinner, Snackbar, ConfirmDeleteButton } from '../../common';
 import { FaTimes, FaExclamationTriangle } from 'react-icons/fa';
 import { SongMetadata, PlaylistDetails } from '../../shared';

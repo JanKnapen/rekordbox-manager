@@ -33,6 +33,15 @@ h1 {
     border-radius: 5px;
 }
 
+/* Prevent mobile browsers (iOS/Android) from auto-zooming when inputs are focused.
+   Mobile Safari zooms inputs with font-size < 16px; this rule ensures a minimum size
+   on small viewports while avoiding layout changes on desktop. */
+@media (max-width: 600px) {
+    input, textarea, select, button {
+        font-size: 16px !important;
+    }
+}
+
 .login-form button {
     width: 100%;
     padding: 10px;

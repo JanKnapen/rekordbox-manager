@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Header } from '../../layout';
+import { HeaderDesktop as Header } from '../../layout';
 import { LoadingSpinner, Snackbar, RekordboxSyncModal, ConfirmDeleteButton, Pagination } from '../../common';
 import { SongMetadata } from '../../shared';
 import { fetchSongs, getPlaylists, createPlaylist, addSongToPlaylist, deletePlaylist } from '../../../api/api';

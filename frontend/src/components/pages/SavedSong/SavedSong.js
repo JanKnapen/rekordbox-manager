@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchSpotifySong, fetchSoundCloudMatches, deleteSoundCloudMatch, getDownloadStatus, retryDownload } from '../../../api/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
-import Header from '../../layout/Header';
+import { HeaderDesktop as Header } from '../../layout';
 import SongHeader from '../../shared/SongHeader';
 import SongInfoGrid from '../../shared/SongInfoGrid';
 import { SongDetails } from '../../shared';

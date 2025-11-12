@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { openInNewTabOrNavigate } from '../../utils/navHelper';
 import { FiRefreshCw } from 'react-icons/fi';
-import './Header.css';
+import './Header.desktop.css';
 
 const Header = ({ showHome = false, showPlaylistManager = false, showSync = false, onSyncClick }) => {
     const navigate = useNavigate();

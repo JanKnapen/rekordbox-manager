@@ -1,0 +1,43 @@
+/* Mobile adjustments: reduce padding and compact title sizes */
+.song-details {
+  padding: 0.75rem; /* smaller container padding for compact mobile layout */
+}
+
+.song-header-info h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.125rem;
+}
+
+.song-header-info .artist {
+  font-size: 0.95rem;
+}
+
+/* Ensure the mobile icon class is used where applicable */
+.song-icon-mobile {
+  width: 48px;
+  height: 48px;
+}
+
+/* Reduce spacing inside the song details box */
+.song-header {
+  margin-bottom: 0.75rem; /* override desktop's larger margin */
+  gap: 0.5rem;
+}
+
+.song-info-grid {
+  margin-top: 0.75rem;
+  gap: 0.75rem;
+  padding-top: 0.5rem; /* reduce top padding and border separation */
+}
+
+.soundcloud-matches {
+  margin-top: 1rem; /* slightly smaller than desktop */
+}
+
+.soundcloud-matches .songs-list {
+  padding: 0.5rem; /* tighten list padding */
+}
+
+.soundcloud-matches .song-item {
+  min-height: 56px; /* slightly smaller row height */
+}

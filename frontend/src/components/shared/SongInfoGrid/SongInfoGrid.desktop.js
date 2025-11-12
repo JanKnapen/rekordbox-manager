@@ -1,6 +1,6 @@
 import React from 'react';
 
-const SongInfoGrid = ({ song, bpm, musicKey }) => {
+const SongInfoGridDesktop = ({ song, bpm, musicKey }) => {
     return (
         <div className="song-info-grid">
             <div className="info-item">
@@ -36,4 +36,4 @@ const SongInfoGrid = ({ song, bpm, musicKey }) => {
     );
 };
 
-export default SongInfoGrid;
+export default SongInfoGridDesktop;

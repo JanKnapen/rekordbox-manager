@@ -1,10 +1,6 @@
 import React from 'react';
-import './SongDetails.css';
 
-// PlaylistDetails renders a large playlist icon to the left and then reuses
-// the same header styling used by SongDetails. It accepts an optional
-// `icon` prop (URL or element) and falls back to an emoji.
-const PlaylistDetails = ({ title, metaLine, icon, actionButton, children }) => {
+const PlaylistDetailsDesktop = ({ title, metaLine, icon, actionButton, children }) => {
   const renderIcon = () => {
     if (!icon) return '📁';
     // If icon is a string, assume it's a URL to an image
@@ -40,4 +36,4 @@ const PlaylistDetails = ({ title, metaLine, icon, actionButton, children }) => {
   );
 };
 
-export default PlaylistDetails;
+export default PlaylistDetailsDesktop;

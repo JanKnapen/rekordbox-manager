@@ -1,6 +1,6 @@
 import React from 'react';
 
-const SongHeader = ({ song }) => {
+const SongHeaderDesktop = ({ song }) => {
     return (
         <div className="song-header">
             <div className="song-icon-large">
@@ -19,4 +19,4 @@ const SongHeader = ({ song }) => {
     );
 };
 
-export default SongHeader;
+export default SongHeaderDesktop;

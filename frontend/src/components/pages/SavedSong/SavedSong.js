@@ -3,12 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { fetchSpotifySong, fetchSoundCloudMatches, deleteSoundCloudMatch, getDownloadStatus, retryDownload } from '../../../api/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { HeaderDesktop as Header } from '../../layout';
-import SongHeader from '../../shared/SongHeader';
-import SongInfoGrid from '../../shared/SongInfoGrid';
-import { SongDetails } from '../../shared';
+import { SongHeaderDesktop } from '../../shared/SongHeader';
+import { SongInfoGridDesktop } from '../../shared/SongInfoGrid';
+import { SongDetailsDesktop } from '../../shared/SongDetails';
 import DownloadStatus from '../../shared/DownloadStatus';
 import { FaTimes, FaExternalLinkAlt, FaExclamationTriangle } from 'react-icons/fa';
-import '../../shared/SongDetails.css';
 
 const SavedSong = () => {
     const [song, setSong] = useState(null);
@@ -147,9 +146,9 @@ const SavedSong = () => {
 
             <div className="content">
                 {song && (
-                    <SongDetails>
-                        <SongHeader song={song} />
-                        <SongInfoGrid song={song} bpm={bpm} musicKey={musicKey} />
+                    <SongDetailsDesktop>
+                        <SongHeaderDesktop song={song} />
+                        <SongInfoGridDesktop song={song} bpm={bpm} musicKey={musicKey} />
 
                         {soundcloudMatches && soundcloudMatches.length > 0 && (
                             <div className="soundcloud-matches" style={{ marginTop: '3rem' }}>
@@ -218,7 +217,7 @@ const SavedSong = () => {
                                 )}
                             </button>
                         </div>
-                        </SongDetails>
+                        </SongDetailsDesktop>
                 )}
             </div>
         </div>

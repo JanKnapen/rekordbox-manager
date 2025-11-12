@@ -3,11 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { HeaderDesktop as Header } from '../../layout';
 import { LoadingSpinner, Snackbar, ConfirmDeleteButton } from '../../common';
 import { FaTimes, FaExclamationTriangle } from 'react-icons/fa';
-import { SongMetadata, PlaylistDetails } from '../../shared';
+import { SongMetadata } from '../../shared';
+import { PlaylistDetailsDesktop } from '../../shared/PlaylistDetails';
 import { openInNewTabOrNavigate } from '../../../utils/navHelper';
 import { getPlaylistSongs, getPlaylists, removeSongFromPlaylist, deletePlaylist } from '../../../api/api';
 import './PlaylistDetail.css';
-import '../../shared/SongDetails.css';
 
 function PlaylistDetail() {
   const { playlistId } = useParams();
@@ -118,7 +118,7 @@ function PlaylistDetail() {
     <div className="playlist-detail">
       <Header showHome={true} showPlaylistManager={true} />
       <div className="content">
-        <PlaylistDetails
+        <PlaylistDetailsDesktop
           title={playlistName}
           metaLine={(
             <>

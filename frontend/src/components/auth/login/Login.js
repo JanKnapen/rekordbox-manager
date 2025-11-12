@@ -1,10 +1,10 @@
-import useMediaQuery from '../../shared/useMediaQuery';
+import useIsMobile from '../../shared/useIsMobile';
 import LoginDesktop from './Login.desktop';
 import LoginMobile from './Login.mobile';
 
 // Responsive entry that renders a mobile or desktop login based on viewport
 const Login = (props) => {
-    const isMobile = useMediaQuery('(max-width: 640px)');
+    const isMobile = useIsMobile();
     return isMobile ? <LoginMobile {...props} /> : <LoginDesktop {...props} />;
 };
 

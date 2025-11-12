@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { initCsrf, loginUser } from '../../api/api';
-import './Login.css';
+import { initCsrf, loginUser } from '../../../api/api';
+import './Login.desktop.css';
 
-const Login = () => {
+const LoginDesktop = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -69,4 +69,4 @@ const Login = () => {
     );
 };
 
-export default Login;
+export default LoginDesktop;

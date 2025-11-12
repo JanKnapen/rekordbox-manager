@@ -8,8 +8,8 @@ const Header = ({ showHome = false, showPlaylistManager = false, showSync = fals
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        localStorage.removeItem('rbm_authenticated');
-        localStorage.removeItem('rbm_user');
+        // Clear all local storage on logout so mobile/desktop persisted UI state is reset
+        try { localStorage.clear(); } catch (e) {}
         navigate('/login');
     };
 
